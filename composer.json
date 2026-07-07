@@ -1,0 +1,19 @@
+{
+    "name": "myprojectbiblioteca/v2",
+    "description": "Sistema Biblioteca MVC - Proyecto Semestral",
+    "type": "project",
+    "autoload": {
+        "psr-4": {
+            "App\\": "App/"
+        },
+        "classmap": [
+            "App/"
+        ]
+    },
+    "authors": [
+        {
+            "name": "Rubén Domínguez"
+        }
+    ],
+    "require": {}
+}
