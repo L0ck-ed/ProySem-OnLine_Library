@@ -2,7 +2,55 @@
 
 declare(strict_types=1);
 
-require_once __DIR__ . '/../vendor/autoload.php';
+$composerAutoload = __DIR__ . '/../vendor/autoload.php';
+
+if (file_exists($composerAutoload)) {
+    require_once $composerAutoload;
+}
+
+spl_autoload_register(function (string $class): void {
+    if (!str_starts_with($class, 'App\\')) {
+        return;
+    }
+
+    static $classMap = null;
+
+    if ($classMap === null) {
+        $classMap = [];
+        $basePath = realpath(__DIR__ . '/../App');
+
+        if ($basePath === false) {
+            return;
+        }
+
+        $iterator = new RecursiveIteratorIterator(
+            new RecursiveDirectoryIterator($basePath, FilesystemIterator::SKIP_DOTS)
+        );
+
+        foreach ($iterator as $file) {
+            if (!$file->isFile() || strtolower($file->getExtension()) !== 'php') {
+                continue;
+            }
+
+            $content = file_get_contents($file->getPathname());
+
+            if ($content === false) {
+                continue;
+            }
+
+            if (
+                preg_match('/namespace\\s+([^;]+);/', $content, $namespaceMatch) &&
+                preg_match('/(?:class|interface|trait)\\s+([A-Za-z_][A-Za-z0-9_]*)/', $content, $classMatch)
+            ) {
+                $classMap[$namespaceMatch[1] . '\\' . $classMatch[1]] = $file->getPathname();
+            }
+        }
+    }
+
+    if (isset($classMap[$class])) {
+        require_once $classMap[$class];
+    }
+});
 
 use App\Core\Router;
 use App\Controllers\LoginController;

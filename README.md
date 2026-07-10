@@ -30,7 +30,7 @@ ProySem-OnLine_Library
 │   └── views
 │
 ├── Database
-│   └── biblioteca_v2.sql
+│   └── biblioteca.sql
 │
 ├── Public
 │   ├── assets
@@ -38,7 +38,7 @@ ProySem-OnLine_Library
 │
 ├── .htaccess
 ├── composer.json
-└── README.md
+└── readme.md
 ```
 
 ---
@@ -188,8 +188,8 @@ Se encarga de mostrar la interfaz al usuario.
 Ejemplo:
 
 ```text
-App/views/User/crear.php
-App/views/User/listar.php
+App/views/user/crear.php
+App/views/user/listar.php
 ```
 
 ### Controlador

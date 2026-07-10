@@ -1,36 +1,31 @@
 <?php
 
-namespace App\Config;
+namespace App\Configs;
 
 use PDO;
 use PDOException;
 
-class Database
+class DatabaseConfig
 {
-    private static ?PDO $conexion = null;
+    private const SERVER = '.\\SQLEXPRESS';
+    private const DATABASE = 'OnLineLibrary';
+    private const USER = 'sa';
+    private const PASSWORD = '01022005@';
 
-    public static function conectar(): PDO
+    public static function connect(): PDO
     {
-        if (self::$conexion === null) {
-            $dsn = 'mysql:host=' . Config::HOST .
-                   ';dbname=' . Config::DB .
-                   ';charset=' . Config::CHARSET;
+        try {
+            $connection = new PDO(
+                "sqlsrv:Server=" . self::SERVER . ";Database=" . self::DATABASE,
+                self::USER,
+                self::PASSWORD
+            );
 
-            try {
-                self::$conexion = new PDO(
-                    $dsn,
-                    Config::USER,
-                    Config::PASSWORD,
-                    [
-                        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-                        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC
-                    ]
-                );
-            } catch (PDOException $e) {
-                die('Error de conexión: ' . $e->getMessage());
-            }
+            $connection->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+            return $connection;
+        } catch (PDOException $e) {
+            die("Error de conexión SQL Server: " . $e->getMessage());
         }
-
-        return self::$conexion;
     }
 }

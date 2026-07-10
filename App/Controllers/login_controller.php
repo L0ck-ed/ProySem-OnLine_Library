@@ -9,7 +9,7 @@ class LoginController extends Controller
 {
     public function index(): void
     {
-        $this->view('login/login');
+        $this->view('Auth/login');
     }
 
     public function autenticar(): void

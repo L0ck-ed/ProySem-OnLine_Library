@@ -3,8 +3,8 @@
 use App\Helpers\Session;
 use App\Config\Config;
 
-require_once __DIR__ . '/../partials/header.php';
-require_once __DIR__ . '/../partials/navbar.php';
+require_once __DIR__ . '/../../Partials/header.php';
+require_once __DIR__ . '/../Partials/navbar.php';
 
 $success = Session::getFlash('success');
 $error = Session::getFlash('error');
@@ -14,14 +14,14 @@ $error = Session::getFlash('error');
 <div class="container-fluid">
     <div class="row">
         <div class="col-md-2 p-0">
-            <?php require_once __DIR__ . '/../partials/sidebar.php'; ?>
+            <?php require_once __DIR__ . '/../Partials/sidebar.php'; ?>
         </div>
 
         <div class="col-md-10 p-4">
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h2>Usuarios</h2>
 
-                <a href="<?= Config::BASE_URL ?>/usuarios/crear" class="btn btn-primary">
+                <a href="<?= Config::baseUrl() ?>/usuarios/crear" class="btn btn-primary">
                     <i class="fa-solid fa-user-plus"></i>
                     Nuevo Usuario
                 </a>
@@ -36,7 +36,7 @@ $error = Session::getFlash('error');
             <?php endif; ?>
 
             <div class="card p-4">
-                <form method="GET" action="<?= Config::BASE_URL ?>/usuarios" class="row mb-3">
+                <form method="GET" action="<?= Config::baseUrl() ?>/usuarios" class="row mb-3">
                     <div class="col-md-10">
                         <input
                             type="text"
@@ -99,7 +99,7 @@ $error = Session::getFlash('error');
                         <?php for ($i = 1; $i <= max(1, $paginas); $i++): ?>
                             <li class="page-item <?= $i == $pagina ? 'active' : '' ?>">
                                 <a class="page-link"
-                                   href="<?= Config::BASE_URL ?>/usuarios?buscar=<?= urlencode($buscar) ?>&pagina=<?= $i ?>">
+                                   href="<?= Config::baseUrl() ?>/usuarios?buscar=<?= urlencode($buscar) ?>&pagina=<?= $i ?>">
                                     <?= $i ?>
                                 </a>
                             </li>
@@ -111,4 +111,4 @@ $error = Session::getFlash('error');
     </div>
 </div>
 
-<?php require_once __DIR__ . '/../partials/footer.php'; ?>
+<?php require_once __DIR__ . '/../../Partials/footer.php'; ?>

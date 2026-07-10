@@ -12,7 +12,7 @@ class Auth
         Session::start();
 
         if (!Session::has('usuario')) {
-            header('Location: ' . Config::BASE_URL . '/');
+            header('Location: ' . Config::url());
             exit;
         }
     }

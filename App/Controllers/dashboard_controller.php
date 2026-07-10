@@ -10,6 +10,6 @@ class DashboardController extends Controller
     public function index(): void
     {
         Auth::check();
-        $this->view('dashboards/panel');
+        $this->view('Admin/Dashboards/panel');
     }
 }

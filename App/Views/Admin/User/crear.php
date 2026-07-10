@@ -3,8 +3,8 @@
 use App\Helpers\Session;
 use App\Config\Config;
 
-require_once __DIR__ . '/../partials/header.php';
-require_once __DIR__ . '/../partials/navbar.php';
+require_once __DIR__ . '/../../Partials/header.php';
+require_once __DIR__ . '/../Partials/navbar.php';
 
 $error = Session::getFlash('error');
 
@@ -13,7 +13,7 @@ $error = Session::getFlash('error');
 <div class="container-fluid">
     <div class="row">
         <div class="col-md-2 p-0">
-            <?php require_once __DIR__ . '/../partials/sidebar.php'; ?>
+            <?php require_once __DIR__ . '/../Partials/sidebar.php'; ?>
         </div>
 
         <div class="col-md-10 p-4">
@@ -24,7 +24,7 @@ $error = Session::getFlash('error');
             <?php endif; ?>
 
             <div class="card p-4 mt-3">
-                <form method="POST" action="<?= Config::BASE_URL ?>/usuarios/guardar">
+                <form method="POST" action="<?= Config::baseUrl() ?>/usuarios/guardar">
                     <div class="mb-3">
                         <label>Nombre completo</label>
                         <input type="text" name="nombre" class="form-control" required>
@@ -53,7 +53,7 @@ $error = Session::getFlash('error');
                         Guardar
                     </button>
 
-                    <a href="<?= Config::BASE_URL ?>/usuarios" class="btn btn-secondary">
+                    <a href="<?= Config::baseUrl() ?>/usuarios" class="btn btn-secondary">
                         Cancelar
                     </a>
                 </form>
@@ -62,4 +62,4 @@ $error = Session::getFlash('error');
     </div>
 </div>
 
-<?php require_once __DIR__ . '/../partials/footer.php'; ?>
+<?php require_once __DIR__ . '/../../Partials/footer.php'; ?>

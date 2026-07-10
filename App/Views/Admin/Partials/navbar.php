@@ -11,7 +11,7 @@ $nombreSesion = Session::get('nombre') ?? 'Administrador';
     <div class="container-fluid">
         <span class="navbar-brand fw-bold">
             <i class="fa-solid fa-book-open-reader"></i>
-            MyProjectBibliotecaV2
+            Biblioteca Online
         </span>
 
         <div class="d-flex align-items-center gap-3 text-white">
@@ -20,7 +20,7 @@ $nombreSesion = Session::get('nombre') ?? 'Administrador';
                 <?= $nombreSesion ?>
             </span>
 
-            <a href="<?= Config::BASE_URL ?>/logout" class="btn btn-danger btn-sm">
+            <a href="<?= Config::baseUrl() ?>/logout" class="btn btn-danger btn-sm">
                 <i class="fa-solid fa-right-from-bracket"></i>
                 Cerrar sesión
             </a>

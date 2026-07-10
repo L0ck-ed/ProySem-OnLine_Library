@@ -1,14 +1,14 @@
 <?php
 
-require_once __DIR__ . '/../partials/header.php';
-require_once __DIR__ . '/../partials/navbar.php';
+require_once __DIR__ . '/../../Partials/header.php';
+require_once __DIR__ . '/../Partials/navbar.php';
 
 ?>
 
 <div class="container-fluid">
     <div class="row">
         <div class="col-md-2 p-0">
-            <?php require_once __DIR__ . '/../partials/sidebar.php'; ?>
+            <?php require_once __DIR__ . '/../Partials/sidebar.php'; ?>
         </div>
 
         <div class="col-md-10 p-4">
@@ -59,4 +59,4 @@ require_once __DIR__ . '/../partials/navbar.php';
     </div>
 </div>
 
-<?php require_once __DIR__ . '/../partials/footer.php'; ?>
+<?php require_once __DIR__ . '/../../Partials/footer.php'; ?>

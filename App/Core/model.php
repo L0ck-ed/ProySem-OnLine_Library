@@ -2,7 +2,7 @@
 
 namespace App\Core;
 
-use App\Config\Database;
+use App\Configs\DatabaseConfig;
 use PDO;
 
 class Model
@@ -11,6 +11,6 @@ class Model
 
     public function __construct()
     {
-        $this->db = Database::conectar();
+        $this->db = DatabaseConfig::connect();
     }
 }

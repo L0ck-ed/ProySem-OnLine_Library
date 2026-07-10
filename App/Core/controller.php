@@ -6,7 +6,16 @@ class Controller
 {
     protected function view(string $view, array $data = []): void
     {
-        extract($data);
-        require_once __DIR__ . '/../views/' . $view . '.php';
+        extract($data, EXTR_SKIP);
+
+        $viewPath = __DIR__ . '/../Views/' . $view . '.php';
+
+        if (!file_exists($viewPath)) {
+            http_response_code(500);
+            echo 'Error: vista no encontrada.';
+            return;
+        }
+
+        require_once $viewPath;
     }
 }

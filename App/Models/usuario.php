@@ -3,51 +3,66 @@
 namespace App\Models;
 
 use App\Core\Model;
+use PDO;
 
 class Usuario extends Model
 {
     public function buscarPorUsuario(string $usuario): array|false
     {
-        $sql = "SELECT * FROM usuarios WHERE usuario = :usuario LIMIT 1";
+        $sql = "SELECT TOP 1 *
+                FROM dbo.usuarios
+                WHERE usuario = :usuario";
+
         $stmt = $this->db->prepare($sql);
-        $stmt->execute([':usuario' => $usuario]);
+        $stmt->execute([
+            ':usuario' => $usuario
+        ]);
 
         return $stmt->fetch();
     }
 
     public function actualizarLogin(int $idUsuario): void
     {
-        $sql = "UPDATE usuarios
-                SET ultimo_login = NOW(),
-                    ultimo_intento = NOW(),
+        $sql = "UPDATE dbo.usuarios
+                SET ultimo_login = SYSDATETIME(),
+                    ultimo_intento = SYSDATETIME(),
                     intentos_fallidos = 0
                 WHERE id_usuario = :id";
 
         $stmt = $this->db->prepare($sql);
-        $stmt->execute([':id' => $idUsuario]);
+        $stmt->execute([
+            ':id' => $idUsuario
+        ]);
     }
 
     public function aumentarIntentos(int $idUsuario): void
     {
-        $sql = "UPDATE usuarios
+        $sql = "UPDATE dbo.usuarios
                 SET intentos_fallidos = intentos_fallidos + 1,
-                    ultimo_intento = NOW()
+                    ultimo_intento = SYSDATETIME()
                 WHERE id_usuario = :id";
 
         $stmt = $this->db->prepare($sql);
-        $stmt->execute([':id' => $idUsuario]);
+        $stmt->execute([
+            ':id' => $idUsuario
+        ]);
     }
 
     public function bloquearUsuario(int $idUsuario): void
     {
-        $sql = "UPDATE usuarios SET bloqueado = 1 WHERE id_usuario = :id";
+        $sql = "UPDATE dbo.usuarios
+                SET bloqueado = 1
+                WHERE id_usuario = :id";
+
         $stmt = $this->db->prepare($sql);
-        $stmt->execute([':id' => $idUsuario]);
+        $stmt->execute([
+            ':id' => $idUsuario
+        ]);
     }
 
     public function crear(array $data): bool
     {
-        $sql = "INSERT INTO usuarios
+        $sql = "INSERT INTO dbo.usuarios
                 (nombre, usuario, password, rol, estado)
                 VALUES
                 (:nombre, :usuario, :password, :rol, 'Activo')";
@@ -65,15 +80,20 @@ class Usuario extends Model
     public function listar(string $buscar = '', int $limit = 10, int $offset = 0): array
     {
         $sql = "SELECT id_usuario, nombre, usuario, rol, estado, fecha_creacion
-                FROM usuarios
-                WHERE nombre LIKE :buscar OR usuario LIKE :buscar
+                FROM dbo.usuarios
+                WHERE nombre LIKE :buscar_nombre
+                   OR usuario LIKE :buscar_usuario
                 ORDER BY id_usuario DESC
-                LIMIT :limit OFFSET :offset";
+                OFFSET :offset ROWS
+                FETCH NEXT :limit ROWS ONLY";
 
         $stmt = $this->db->prepare($sql);
-        $stmt->bindValue(':buscar', '%' . $buscar . '%');
-        $stmt->bindValue(':limit', $limit, \PDO::PARAM_INT);
-        $stmt->bindValue(':offset', $offset, \PDO::PARAM_INT);
+
+        $stmt->bindValue(':buscar_nombre', '%' . $buscar . '%', PDO::PARAM_STR);
+        $stmt->bindValue(':buscar_usuario', '%' . $buscar . '%', PDO::PARAM_STR);
+        $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+        $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+
         $stmt->execute();
 
         return $stmt->fetchAll();
@@ -82,12 +102,19 @@ class Usuario extends Model
     public function contar(string $buscar = ''): int
     {
         $sql = "SELECT COUNT(*) AS total
-                FROM usuarios
-                WHERE nombre LIKE :buscar OR usuario LIKE :buscar";
+                FROM dbo.usuarios
+                WHERE nombre LIKE :buscar_nombre
+                   OR usuario LIKE :buscar_usuario";
 
         $stmt = $this->db->prepare($sql);
-        $stmt->execute([':buscar' => '%' . $buscar . '%']);
 
-        return (int)$stmt->fetch()['total'];
+        $stmt->execute([
+            ':buscar_nombre' => '%' . $buscar . '%',
+            ':buscar_usuario' => '%' . $buscar . '%'
+        ]);
+
+        $resultado = $stmt->fetch();
+
+        return (int) $resultado['total'];
     }
 }

@@ -10,26 +10,17 @@ class Router
 
     public function get(string $ruta, array $accion): void
     {
-        $this->routes['GET'][$ruta] = $accion;
+        $this->routes['GET'][$this->normalizeRoute($ruta)] = $accion;
     }
 
     public function post(string $ruta, array $accion): void
     {
-        $this->routes['POST'][$ruta] = $accion;
+        $this->routes['POST'][$this->normalizeRoute($ruta)] = $accion;
     }
 
     public function dispatch(string $url, string $method): void
     {
-        $path = parse_url($url, PHP_URL_PATH) ?? '/';
-        $base = Config::BASE_URL;
-
-        if (str_starts_with($path, $base)) {
-            $path = substr($path, strlen($base));
-        }
-
-        if ($path === '' || $path === false) {
-            $path = '/';
-        }
+        $path = $this->normalizeRequestPath($url);
 
         if (!isset($this->routes[$method][$path])) {
             http_response_code(404);
@@ -54,5 +45,47 @@ class Router
         }
 
         $obj->$function();
+    }
+
+    private function normalizeRequestPath(string $url): string
+    {
+        $path = parse_url($url, PHP_URL_PATH) ?? '/';
+        $path = str_replace('\\', '/', $path);
+
+        $scriptName = str_replace('\\', '/', $_SERVER['SCRIPT_NAME'] ?? '');
+        $scriptDir = rtrim(dirname($scriptName), '/');
+        $projectDir = rtrim(dirname($scriptDir), '/');
+
+        $bases = array_unique(array_filter([
+            rtrim(Config::publicUrl(), '/'),
+            rtrim(Config::baseUrl(), '/'),
+            $scriptDir,
+            $projectDir,
+        ]));
+
+        usort($bases, fn (string $a, string $b): int => strlen($b) <=> strlen($a));
+
+        foreach ($bases as $base) {
+            if ($base !== '' && ($path === $base || str_starts_with($path, $base . '/'))) {
+                $path = substr($path, strlen($base));
+                break;
+            }
+        }
+
+        if (str_starts_with($path, '/Public/')) {
+            $path = substr($path, strlen('/Public'));
+        }
+
+        if ($path === '' || $path === false || $path === '/index.php') {
+            return '/';
+        }
+
+        return $this->normalizeRoute($path);
+    }
+
+    private function normalizeRoute(string $route): string
+    {
+        $route = '/' . trim($route, '/');
+        return $route === '//' ? '/' : $route;
     }
 }

@@ -16,8 +16,8 @@ $error = Session::getFlash('error');
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="<?= Config::BASE_URL ?>/assets/css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="<?= Config::assetsUrl() ?>/CSS/style.css?v=modern-library-1">
 </head>
 
 <body class="login-body">
@@ -36,7 +36,7 @@ $error = Session::getFlash('error');
             </div>
         <?php endif; ?>
 
-        <form method="POST" action="<?= Config::BASE_URL ?>/login">
+        <form method="POST" action="<?= Config::baseUrl() ?>/login">
             <div class="mb-3">
                 <label>Usuario</label>
                 <input type="text" name="usuario" class="form-control" required>

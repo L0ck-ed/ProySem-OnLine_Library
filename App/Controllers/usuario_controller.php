@@ -27,7 +27,7 @@ class UsuarioController extends Controller
         $total = $usuarioModel->contar($buscar);
         $paginas = (int)ceil($total / $limite);
 
-        $this->view('user/listar', [
+        $this->view('Admin/User/listar', [
             'usuarios' => $usuarios,
             'buscar' => $buscar,
             'pagina' => $pagina,
@@ -38,7 +38,7 @@ class UsuarioController extends Controller
     public function crear(): void
     {
         Auth::check();
-        $this->view('user/crear');
+        $this->view('Admin/User/crear');
     }
 
     public function guardar(): void
@@ -52,13 +52,13 @@ class UsuarioController extends Controller
 
         if (!Validator::required($nombre) || !Validator::required($usuario) || !Validator::required($password)) {
             Session::flash('error', 'Debe completar todos los campos.');
-            header('Location: ' . Config::BASE_URL . '/usuarios/crear');
+            header('Location: ' . Config::url('usuarios/crear'));
             exit;
         }
 
         if (!Validator::min($password, 6)) {
             Session::flash('error', 'La contraseña debe tener mínimo 6 caracteres.');
-            header('Location: ' . Config::BASE_URL . '/usuarios/crear');
+            header('Location: ' . Config::url('usuarios/crear'));
             exit;
         }
 
@@ -66,7 +66,7 @@ class UsuarioController extends Controller
 
         if ($usuarioModel->buscarPorUsuario($usuario)) {
             Session::flash('error', 'El usuario ya existe.');
-            header('Location: ' . Config::BASE_URL . '/usuarios/crear');
+            header('Location: ' . Config::url('usuarios/crear'));
             exit;
         }
 
@@ -78,7 +78,7 @@ class UsuarioController extends Controller
         ]);
 
         Session::flash('success', 'Usuario creado correctamente.');
-        header('Location: ' . Config::BASE_URL . '/usuarios');
+        header('Location: ' . Config::url('usuarios'));
         exit;
     }
 }

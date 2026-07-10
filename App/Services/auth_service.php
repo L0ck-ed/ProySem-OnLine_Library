@@ -28,7 +28,7 @@ class AuthService
         if (!Validator::required($usuario) || !Validator::required($password)) {
             Logger::login($usuario, 'campos_vacios');
             Session::flash('error', 'Debe completar todos los campos.');
-            header('Location: ' . Config::BASE_URL . '/');
+            header('Location: ' . Config::url());
             exit;
         }
 
@@ -37,14 +37,14 @@ class AuthService
         if (!$datos) {
             Logger::login($usuario, 'usuario_no_existe');
             Session::flash('error', 'Usuario o contraseña incorrectos.');
-            header('Location: ' . Config::BASE_URL . '/');
+            header('Location: ' . Config::url());
             exit;
         }
 
         if (($datos['bloqueado'] ?? 0) == 1) {
             Logger::login($usuario, 'bloqueado');
             Session::flash('error', 'Este usuario está bloqueado por intentos fallidos.');
-            header('Location: ' . Config::BASE_URL . '/');
+            header('Location: ' . Config::url());
             exit;
         }
 
@@ -62,7 +62,7 @@ class AuthService
                 Session::flash('error', "Usuario o contraseña incorrectos. Intento {$intentos} de 3.");
             }
 
-            header('Location: ' . Config::BASE_URL . '/');
+            header('Location: ' . Config::url());
             exit;
         }
 
@@ -74,14 +74,14 @@ class AuthService
         Session::set('nombre', $datos['nombre']);
         Session::set('rol', $datos['rol']);
 
-        header('Location: ' . Config::BASE_URL . '/dashboard');
+        header('Location: ' . Config::url('dashboard'));
         exit;
     }
 
     public function logout(): void
     {
         Session::destroy();
-        header('Location: ' . Config::BASE_URL . '/');
+        header('Location: ' . Config::url());
         exit;
     }
 }

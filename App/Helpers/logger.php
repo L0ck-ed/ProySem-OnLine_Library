@@ -2,28 +2,28 @@
 
 namespace App\Helpers;
 
-use App\Config\Database;
+use App\Configs\DatabaseConfig;
 
 class Logger
 {
     public static function login(string $usuario, string $resultado): void
     {
-        $pdo = Database::conectar();
+        try {
+            $db = DatabaseConfig::connect();
 
-        $sql = "INSERT INTO logs_login
-                (usuario, ip, navegador, metodo, url, resultado)
-                VALUES
-                (:usuario, :ip, :navegador, :metodo, :url, :resultado)";
+            $sql = "INSERT INTO dbo.logs_login
+                    (usuario, resultado, fecha)
+                    VALUES
+                    (:usuario, :resultado, SYSDATETIME())";
 
-        $stmt = $pdo->prepare($sql);
+            $stmt = $db->prepare($sql);
 
-        $stmt->execute([
-            ':usuario' => $usuario,
-            ':ip' => $_SERVER['REMOTE_ADDR'] ?? 'desconocida',
-            ':navegador' => $_SERVER['HTTP_USER_AGENT'] ?? 'desconocido',
-            ':metodo' => $_SERVER['REQUEST_METHOD'] ?? 'desconocido',
-            ':url' => $_SERVER['REQUEST_URI'] ?? 'desconocida',
-            ':resultado' => $resultado
-        ]);
+            $stmt->execute([
+                ':usuario' => $usuario,
+                ':resultado' => $resultado
+            ]);
+        } catch (\Throwable $e) {
+            error_log('Error en Logger::login: ' . $e->getMessage());
+        }
     }
 }
