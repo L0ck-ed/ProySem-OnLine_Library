@@ -1,0 +1,30 @@
+# Dependencias de Composer (se regeneran con "composer install")
+/vendor/
+
+# Variables de entorno / credenciales locales
+.env
+.env.local
+
+# Archivos del sistema operativo
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Archivos de IDE / editor
+.vscode/
+.idea/
+*.suo
+*.user
+
+# Logs generados por el sistema (registro de intentos de login, errores, etc.)
+*.log
+/App/Logs/
+/logs/
+
+# Archivos subidos por usuarios (imágenes de libros, thumbnails)
+# Descomenta esto si NO quieren subir las imágenes reales al repo:
+# /Public/Assets/uploads/
+# /Public/Assets/thumbnails/
+
+# Archivos temporales de Composer
+composer.phar
