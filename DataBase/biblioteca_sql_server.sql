@@ -218,3 +218,22 @@ GO
 
 SELECT 'Base de datos myprojectbiblioteca_v2 creada correctamente en SQL Server.' AS mensaje;
 GO
+
+
+
+/*
+    Migración: agrega autenticación por PIN a la tabla estudiantes.
+    Ejecutar UNA SOLA VEZ contra la base de datos OnLineLibrary (SQL Server).
+    Cada miembro del equipo debe correr este script después de hacer pull.
+*/
+
+USE OnLineLibrary;
+GO
+
+ALTER TABLE dbo.estudiantes ADD
+    pin_hash NVARCHAR(255) NULL,
+    intentos_fallidos INT NOT NULL CONSTRAINT df_estudiantes_intentos DEFAULT 0,
+    bloqueado BIT NOT NULL CONSTRAINT df_estudiantes_bloqueado DEFAULT 0,
+    ultimo_login DATETIME2 NULL,
+    ultimo_intento DATETIME2 NULL;
+GO

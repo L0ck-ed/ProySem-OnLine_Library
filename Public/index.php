@@ -56,6 +56,8 @@ use App\Core\Router;
 use App\Controllers\LoginController;
 use App\Controllers\DashboardController;
 use App\Controllers\UsuarioController;
+use App\Controllers\EstudianteAuthController;
+use App\Controllers\PortalController;
 
 $router = new Router();
 
@@ -68,6 +70,17 @@ $router->get('/dashboard', [DashboardController::class, 'index']);
 $router->get('/usuarios', [UsuarioController::class, 'index']);
 $router->get('/usuarios/crear', [UsuarioController::class, 'crear']);
 $router->post('/usuarios/guardar', [UsuarioController::class, 'guardar']);
+
+// Portal del estudiante
+$router->get('/portal/login', [EstudianteAuthController::class, 'index']);
+$router->post('/portal/login', [EstudianteAuthController::class, 'autenticar']);
+$router->get('/portal/logout', [EstudianteAuthController::class, 'logout']);
+$router->get('/portal/inicio', [PortalController::class, 'inicio']);
+$router->get('/portal/catalogo', [PortalController::class, 'catalogo']);
+$router->get('/portal/catalogo/detalle', [PortalController::class, 'detalle']);
+$router->get('/portal/prestamos', [PortalController::class, 'prestamos']);
+$router->get('/portal/solicitudes', [PortalController::class, 'solicitudes']);
+$router->get('/portal/perfil', [PortalController::class, 'perfil']);
 
 $router->dispatch(
     $_SERVER['REQUEST_URI'],
