@@ -131,7 +131,7 @@ require_once __DIR__ . '/../Partials/navbar.php';
                                 <span class="badge badge-existencias-agotado">Agotado</span>
                             <?php endif; ?>
                         </div>
-                        <a href="<?= App\Config\Config::url('portal/catalogo/detalle') ?>" class="btn btn-primary btn-sm w-100 mt-2">
+                        <a href="<?= App\Config\Config::url('portal/catalogo/detalle') ?>?id=<?= $libro['id_libro'] ?>" class="btn btn-primary btn-sm w-100 mt-2">
                             Ver detalle
                         </a>
                     </div>

@@ -11,10 +11,10 @@ class Logger
         try {
             $db = DatabaseConfig::connect();
 
-            $sql = "INSERT INTO dbo.logs_login
+            $sql = "INSERT INTO logs_login
                     (usuario, ip, navegador, metodo, url, resultado, fecha)
                     VALUES
-                    (:usuario, :ip, :navegador, :metodo, :url, :resultado, SYSDATETIME())";
+                    (:usuario, :ip, :navegador, :metodo, :url, :resultado, NOW())";
 
             $stmt = $db->prepare($sql);
 
@@ -46,3 +46,5 @@ class Logger
         return 'desconocida';
     }
 }
+
+

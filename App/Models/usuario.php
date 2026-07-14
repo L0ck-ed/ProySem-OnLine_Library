@@ -9,9 +9,10 @@ class Usuario extends Model
 {
     public function buscarPorUsuario(string $usuario): array|false
     {
-        $sql = "SELECT TOP 1 *
-                FROM dbo.usuarios
-                WHERE usuario = :usuario";
+        $sql = "SELECT *
+                FROM usuarios
+                WHERE usuario = :usuario
+                LIMIT 1";
 
         $stmt = $this->db->prepare($sql);
         $stmt->execute([
@@ -23,9 +24,9 @@ class Usuario extends Model
 
     public function actualizarLogin(int $idUsuario): void
     {
-        $sql = "UPDATE dbo.usuarios
-                SET ultimo_login = SYSDATETIME(),
-                    ultimo_intento = SYSDATETIME(),
+        $sql = "UPDATE usuarios
+                SET ultimo_login = NOW(),
+                    ultimo_intento = NOW(),
                     intentos_fallidos = 0
                 WHERE id_usuario = :id";
 
@@ -37,9 +38,9 @@ class Usuario extends Model
 
     public function aumentarIntentos(int $idUsuario): void
     {
-        $sql = "UPDATE dbo.usuarios
+        $sql = "UPDATE usuarios
                 SET intentos_fallidos = intentos_fallidos + 1,
-                    ultimo_intento = SYSDATETIME()
+                    ultimo_intento = NOW()
                 WHERE id_usuario = :id";
 
         $stmt = $this->db->prepare($sql);
@@ -50,7 +51,7 @@ class Usuario extends Model
 
     public function bloquearUsuario(int $idUsuario): void
     {
-        $sql = "UPDATE dbo.usuarios
+        $sql = "UPDATE usuarios
                 SET bloqueado = 1
                 WHERE id_usuario = :id";
 
@@ -62,7 +63,7 @@ class Usuario extends Model
 
     public function crear(array $data): bool
     {
-        $sql = "INSERT INTO dbo.usuarios
+        $sql = "INSERT INTO usuarios
                 (nombre, usuario, password, rol, estado)
                 VALUES
                 (:nombre, :usuario, :password, :rol, 'Activo')";
@@ -80,19 +81,18 @@ class Usuario extends Model
     public function listar(string $buscar = '', int $limit = 10, int $offset = 0): array
     {
         $sql = "SELECT id_usuario, nombre, usuario, rol, estado, fecha_creacion
-                FROM dbo.usuarios
+                FROM usuarios
                 WHERE nombre LIKE :buscar_nombre
                    OR usuario LIKE :buscar_usuario
                 ORDER BY id_usuario DESC
-                OFFSET :offset ROWS
-                FETCH NEXT :limit ROWS ONLY";
+                LIMIT :limit OFFSET :offset";
 
         $stmt = $this->db->prepare($sql);
 
         $stmt->bindValue(':buscar_nombre', '%' . $buscar . '%', PDO::PARAM_STR);
         $stmt->bindValue(':buscar_usuario', '%' . $buscar . '%', PDO::PARAM_STR);
-        $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
         $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+        $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
 
         $stmt->execute();
 
@@ -102,7 +102,7 @@ class Usuario extends Model
     public function contar(string $buscar = ''): int
     {
         $sql = "SELECT COUNT(*) AS total
-                FROM dbo.usuarios
+                FROM usuarios
                 WHERE nombre LIKE :buscar_nombre
                    OR usuario LIKE :buscar_usuario";
 

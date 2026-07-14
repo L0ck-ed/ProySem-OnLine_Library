@@ -1,20 +1,16 @@
 <?php
-
 /* Vista de solo interfaz. El botón "Reservar" no ejecuta lógica todavía. */
 
 $nombreEstudiante = $nombreEstudiante ?? 'Anthony Castillo';
 $cipSesion = $cipSesion ?? '8-1023-2265';
 
-$libro = $libro ?? [
-    'titulo'           => 'Clean Code',
-    'autor'            => 'Robert C. Martin',
-    'editorial'        => 'Prentice Hall',
-    'anio_publicacion' => 2008,
-    'categoria'        => 'Sistemas',
-    'existencias'      => 4,
-    'ubicacion'        => 'Estante S-12',
-    'descripcion'      => 'Un manual sobre buenas prácticas para escribir código legible, mantenible y bien estructurado, con ejemplos aplicables a distintos lenguajes de programación.',
-];
+if (!isset($libro) || $libro === false) {
+    require_once __DIR__ . '/../../Partials/header.php';
+    require_once __DIR__ . '/../Partials/navbar.php';
+    echo '<div class="container-fluid py-4 px-4"><div class="alert alert-danger">Libro no encontrado. <a href="' . App\Config\Config::url('portal/catalogo') . '">Volver al catálogo</a></div></div>';
+    require_once __DIR__ . '/../../Partials/footer.php';
+    return;
+}
 
 require_once __DIR__ . '/../../Partials/header.php';
 require_once __DIR__ . '/../Partials/navbar.php';

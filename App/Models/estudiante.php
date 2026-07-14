@@ -11,19 +11,21 @@ class Estudiante extends Model implements AutenticableRepositorioInterface
     public function buscarPorCredencial(string $credencial): array|false
     {
         $sql = "SELECT
-                    id_estudiante AS id,
-                    cip,
-                    primer_nombre,
-                    segundo_nombre,
-                    primer_apellido,
-                    segundo_apellido,
-                    id_carrera,
-                    estado,
-                    pin_hash,
-                    intentos_fallidos,
-                    bloqueado
-                FROM dbo.estudiantes
-                WHERE cip = :cip";
+                    e.id_estudiante AS id,
+                    e.cip,
+                    e.primer_nombre,
+                    e.segundo_nombre,
+                    e.primer_apellido,
+                    e.segundo_apellido,
+                    e.id_carrera,
+                    c.nombre AS carrera,
+                    e.estado,
+                    e.pin_hash,
+                    e.intentos_fallidos,
+                    e.bloqueado
+                FROM estudiantes e
+                INNER JOIN carreras c ON c.id_carrera = e.id_carrera
+                WHERE e.cip = :cip";
 
         $stmt = $this->db->prepare($sql);
         $stmt->execute([':cip' => $credencial]);
@@ -35,9 +37,9 @@ class Estudiante extends Model implements AutenticableRepositorioInterface
 
     public function aumentarIntentos(int $id): void
     {
-        $sql = "UPDATE dbo.estudiantes
+        $sql = "UPDATE estudiantes
                 SET intentos_fallidos = intentos_fallidos + 1,
-                    ultimo_intento = SYSDATETIME()
+                    ultimo_intento = NOW()
                 WHERE id_estudiante = :id";
 
         $stmt = $this->db->prepare($sql);
@@ -46,7 +48,7 @@ class Estudiante extends Model implements AutenticableRepositorioInterface
 
     public function bloquearUsuario(int $id): void
     {
-        $sql = "UPDATE dbo.estudiantes
+        $sql = "UPDATE estudiantes
                 SET bloqueado = 1
                 WHERE id_estudiante = :id";
 
@@ -56,9 +58,9 @@ class Estudiante extends Model implements AutenticableRepositorioInterface
 
     public function actualizarLogin(int $id): void
     {
-        $sql = "UPDATE dbo.estudiantes
-                SET ultimo_login = SYSDATETIME(),
-                    ultimo_intento = SYSDATETIME(),
+        $sql = "UPDATE estudiantes
+                SET ultimo_login = NOW(),
+                    ultimo_intento = NOW(),
                     intentos_fallidos = 0
                 WHERE id_estudiante = :id";
 
@@ -68,7 +70,7 @@ class Estudiante extends Model implements AutenticableRepositorioInterface
 
     public function establecerPin(int $id, string $pinTextoPlano): bool
     {
-        $sql = "UPDATE dbo.estudiantes
+        $sql = "UPDATE estudiantes
                 SET pin_hash = :pin_hash
                 WHERE id_estudiante = :id";
 
@@ -82,7 +84,7 @@ class Estudiante extends Model implements AutenticableRepositorioInterface
 
     public function buscarPorId(int $id): array|false
     {
-        $sql = "SELECT * FROM dbo.estudiantes WHERE id_estudiante = :id";
+        $sql = "SELECT * FROM estudiantes WHERE id_estudiante = :id";
 
         $stmt = $this->db->prepare($sql);
         $stmt->execute([':id' => $id]);

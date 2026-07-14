@@ -1,5 +1,4 @@
 <?php
-
 /* Vista de solo interfaz. Búsqueda, filtro y paginación son visuales por ahora. */
 
 $nombreEstudiante = $nombreEstudiante ?? 'Anthony Castillo';
@@ -68,7 +67,7 @@ require_once __DIR__ . '/../Partials/navbar.php';
                                 <span class="badge badge-existencias-agotado">Agotado</span>
                             <?php endif; ?>
                         </div>
-                        <a href="<?= App\Config\Config::url('portal/catalogo/detalle') ?>" class="btn btn-primary btn-sm w-100 mt-2">
+                        <a href="<?= App\Config\Config::url('portal/catalogo/detalle') ?>?id=<?= $libro['id_libro'] ?>" class="btn btn-primary btn-sm w-100 mt-2">
                             Ver detalle
                         </a>
                     </div>
@@ -77,15 +76,32 @@ require_once __DIR__ . '/../Partials/navbar.php';
         <?php endforeach; ?>
     </div>
 
+    <?php
+        $paginaActual = $paginaActual ?? 1;
+        $totalPaginas = $totalPaginas ?? 1;
+        $queryBase = 'buscar=' . urlencode($busqueda) . '&categoria=' . urlencode($categoriaSeleccionada);
+    ?>
+    <?php if ($totalPaginas > 1): ?>
     <nav class="mt-2">
         <ul class="pagination justify-content-center">
-            <li class="page-item"><a class="page-link" href="#"><i class="fa-solid fa-angle-left"></i></a></li>
-            <li class="page-item active"><a class="page-link" href="#">1</a></li>
-            <li class="page-item"><a class="page-link" href="#">2</a></li>
-            <li class="page-item"><a class="page-link" href="#">3</a></li>
-            <li class="page-item"><a class="page-link" href="#"><i class="fa-solid fa-angle-right"></i></a></li>
+            <li class="page-item <?= $paginaActual <= 1 ? 'disabled' : '' ?>">
+                <a class="page-link" href="?<?= $queryBase ?>&pagina=<?= max(1, $paginaActual - 1) ?>"><i class="fa-solid fa-angle-left"></i></a>
+            </li>
+            <?php for ($p = 1; $p <= $totalPaginas; $p++): ?>
+                <li class="page-item <?= $p === $paginaActual ? 'active' : '' ?>">
+                    <a class="page-link" href="?<?= $queryBase ?>&pagina=<?= $p ?>"><?= $p ?></a>
+                </li>
+            <?php endfor; ?>
+            <li class="page-item <?= $paginaActual >= $totalPaginas ? 'disabled' : '' ?>">
+                <a class="page-link" href="?<?= $queryBase ?>&pagina=<?= min($totalPaginas, $paginaActual + 1) ?>"><i class="fa-solid fa-angle-right"></i></a>
+            </li>
         </ul>
     </nav>
+    <?php endif; ?>
+
+    <?php if (empty($libros)): ?>
+        <div class="alert alert-info text-center">No se encontraron libros con esos criterios.</div>
+    <?php endif; ?>
 
     <div class="alert alert-success text-center">
         <i class="fa-solid fa-circle-info"></i>
