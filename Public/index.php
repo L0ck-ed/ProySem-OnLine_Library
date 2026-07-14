@@ -78,6 +78,7 @@ $router->get('/portal/logout', [EstudianteAuthController::class, 'logout']);
 $router->get('/portal/inicio', [PortalController::class, 'inicio']);
 $router->get('/portal/catalogo', [PortalController::class, 'catalogo']);
 $router->get('/portal/catalogo/detalle', [PortalController::class, 'detalle']);
+$router->post('/portal/reservar', [PortalController::class, 'reservar']);
 $router->get('/portal/prestamos', [PortalController::class, 'prestamos']);
 $router->get('/portal/solicitudes', [PortalController::class, 'solicitudes']);
 $router->post('/portal/solicitudes', [PortalController::class, 'guardarSolicitud']);

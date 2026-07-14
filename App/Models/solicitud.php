@@ -22,7 +22,6 @@ class Solicitud extends Model
 
     public function crear(int $idEstudiante, string $tituloLibro, string $area, ?string $descripcion): bool
     {
-        // Eliminado "dbo." para MySQL
         $sql = "INSERT INTO solicitudes (id_estudiante, titulo_libro, area, descripcion)
                 VALUES (:id_estudiante, :titulo_libro, :area, :descripcion)";
 
@@ -38,11 +37,10 @@ class Solicitud extends Model
 
     public function listarPorEstudiante(int $idEstudiante): array
     {
-        // Adaptado a MySQL: DATE_FORMAT en lugar de CONVERT, eliminado dbo.
         $sql = "SELECT
                     titulo_libro AS titulo,
                     area,
-                    DATE_FORMAT(fecha, '%Y-%m-%d') AS fecha,
+                    fecha,
                     estado
                 FROM solicitudes
                 WHERE id_estudiante = :id_estudiante
@@ -62,8 +60,9 @@ class Solicitud extends Model
 
         $stmt = $this->db->prepare($sql);
         $stmt->execute([':id_estudiante' => $idEstudiante]);
+
         $resultado = $stmt->fetch();
-        return (int) ($resultado['total'] ?? 0);
+
+        return (int)($resultado['total'] ?? 0);
     }
 }
-

@@ -3,16 +3,19 @@
 namespace App\Models;
 
 use App\Core\Model;
+use App\Core\Sql;
 use PDO;
 
 class Usuario extends Model
 {
     public function buscarPorUsuario(string $usuario): array|false
     {
-        $sql = "SELECT *
+        $topInfo = Sql::top($this->db, 1);
+
+        $sql = "SELECT {$topInfo['antes']} *
                 FROM usuarios
                 WHERE usuario = :usuario
-                LIMIT 1";
+                {$topInfo['despues']}";
 
         $stmt = $this->db->prepare($sql);
         $stmt->execute([
@@ -25,8 +28,8 @@ class Usuario extends Model
     public function actualizarLogin(int $idUsuario): void
     {
         $sql = "UPDATE usuarios
-                SET ultimo_login = NOW(),
-                    ultimo_intento = NOW(),
+                SET ultimo_login = CURRENT_TIMESTAMP,
+                    ultimo_intento = CURRENT_TIMESTAMP,
                     intentos_fallidos = 0
                 WHERE id_usuario = :id";
 
@@ -40,7 +43,7 @@ class Usuario extends Model
     {
         $sql = "UPDATE usuarios
                 SET intentos_fallidos = intentos_fallidos + 1,
-                    ultimo_intento = NOW()
+                    ultimo_intento = CURRENT_TIMESTAMP
                 WHERE id_usuario = :id";
 
         $stmt = $this->db->prepare($sql);
@@ -85,7 +88,7 @@ class Usuario extends Model
                 WHERE nombre LIKE :buscar_nombre
                    OR usuario LIKE :buscar_usuario
                 ORDER BY id_usuario DESC
-                LIMIT :limit OFFSET :offset";
+                " . Sql::limitOffset($this->db);
 
         $stmt = $this->db->prepare($sql);
 

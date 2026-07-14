@@ -3,9 +3,82 @@
 namespace App\Models;
 
 use App\Core\Model;
+use PDO;
+use Throwable;
 
 class Reserva extends Model
 {
+    /**
+     * Crea una reserva/préstamo de un libro para un estudiante.
+     *
+     * Usa una transacción con una actualización atómica de existencias
+     * (UPDATE ... WHERE existencias > 0) para evitar que dos estudiantes
+     * reserven la última unidad al mismo tiempo (condición de carrera),
+     * sin depender de bloqueos específicos de un motor de base de datos
+     * (funciona igual en MySQL y SQL Server).
+     *
+     * @return array{ok: bool, mensaje: string}
+     */
+    public function crear(int $idEstudiante, int $idLibro): array
+    {
+        try {
+            $this->db->beginTransaction();
+
+            // Ya tiene este mismo libro prestado activamente?
+            $sqlExiste = "SELECT id_reserva
+                          FROM reservas
+                          WHERE id_estudiante = :id_estudiante
+                            AND id_libro = :id_libro
+                            AND estado = 'Prestado'";
+
+            $stmtExiste = $this->db->prepare($sqlExiste);
+            $stmtExiste->execute([
+                ':id_estudiante' => $idEstudiante,
+                ':id_libro' => $idLibro
+            ]);
+
+            if ($stmtExiste->fetch()) {
+                $this->db->rollBack();
+                return ['ok' => false, 'mensaje' => 'Ya tienes un préstamo activo de este mismo libro.'];
+            }
+
+            // Descuenta existencias solo si realmente hay stock (operación atómica)
+            $sqlLibro = "UPDATE libros
+                         SET existencias = existencias - 1
+                         WHERE id_libro = :id_libro
+                           AND existencias > 0";
+
+            $stmtLibro = $this->db->prepare($sqlLibro);
+            $stmtLibro->execute([':id_libro' => $idLibro]);
+
+            if ($stmtLibro->rowCount() === 0) {
+                $this->db->rollBack();
+                return ['ok' => false, 'mensaje' => 'No hay unidades disponibles de este libro en este momento.'];
+            }
+
+            $sqlReserva = "INSERT INTO reservas (id_estudiante, id_libro, fecha_reserva, estado)
+                           VALUES (:id_estudiante, :id_libro, CURRENT_TIMESTAMP, 'Prestado')";
+
+            $stmtReserva = $this->db->prepare($sqlReserva);
+            $stmtReserva->execute([
+                ':id_estudiante' => $idEstudiante,
+                ':id_libro' => $idLibro
+            ]);
+
+            $this->db->commit();
+
+            return ['ok' => true, 'mensaje' => '¡Reserva realizada con éxito! Puedes recogerlo en la biblioteca.'];
+        } catch (Throwable $e) {
+            if ($this->db->inTransaction()) {
+                $this->db->rollBack();
+            }
+
+            error_log('Error al crear reserva: ' . $e->getMessage());
+
+            return ['ok' => false, 'mensaje' => 'Ocurrió un error al procesar la reserva. Intenta de nuevo.'];
+        }
+    }
+
     public function listarActivasPorEstudiante(int $idEstudiante): array
     {
         $sql = "SELECT r.id_reserva, l.titulo, r.fecha_reserva, r.estado
@@ -13,8 +86,10 @@ class Reserva extends Model
                 JOIN libros l ON r.id_libro = l.id_libro
                 WHERE r.id_estudiante = :id_estudiante AND r.estado = 'Prestado'
                 ORDER BY r.fecha_reserva DESC";
+
         $stmt = $this->db->prepare($sql);
         $stmt->execute([':id_estudiante' => $idEstudiante]);
+
         return $stmt->fetchAll();
     }
 
@@ -25,36 +100,55 @@ class Reserva extends Model
                 JOIN libros l ON r.id_libro = l.id_libro
                 WHERE r.id_estudiante = :id_estudiante AND r.estado IN ('Devuelto', 'Cancelado')
                 ORDER BY r.fecha_reserva DESC";
+
         $stmt = $this->db->prepare($sql);
         $stmt->execute([':id_estudiante' => $idEstudiante]);
+
         return $stmt->fetchAll();
     }
 
     public function devolver(int $idReserva, int $idEstudiante): bool
     {
-        // Primero verificar que la reserva pertenezca al estudiante y esté en estado 'Prestado'
-        $sql = "SELECT id_libro FROM reservas WHERE id_reserva = :id_reserva AND id_estudiante = :id_estudiante AND estado = 'Prestado'";
-        $stmt = $this->db->prepare($sql);
-        $stmt->execute([':id_reserva' => $idReserva, ':id_estudiante' => $idEstudiante]);
-        $reserva = $stmt->fetch();
+        try {
+            $this->db->beginTransaction();
 
-        if (!$reserva) {
-            return false;
-        }
+            $sql = "SELECT id_libro FROM reservas
+                    WHERE id_reserva = :id_reserva
+                      AND id_estudiante = :id_estudiante
+                      AND estado = 'Prestado'";
 
-        // Actualizar reserva
-        $sqlUpdate = "UPDATE reservas SET estado = 'Devuelto', fecha_devolucion = NOW() WHERE id_reserva = :id_reserva";
-        $stmtUpdate = $this->db->prepare($sqlUpdate);
-        $ok = $stmtUpdate->execute([':id_reserva' => $idReserva]);
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([':id_reserva' => $idReserva, ':id_estudiante' => $idEstudiante]);
+            $reserva = $stmt->fetch();
 
-        if ($ok) {
-            // Incrementar existencias del libro
+            if (!$reserva) {
+                $this->db->rollBack();
+                return false;
+            }
+
+            $sqlUpdate = "UPDATE reservas
+                          SET estado = 'Devuelto', fecha_devolucion = CURRENT_TIMESTAMP
+                          WHERE id_reserva = :id_reserva";
+
+            $stmtUpdate = $this->db->prepare($sqlUpdate);
+            $stmtUpdate->execute([':id_reserva' => $idReserva]);
+
             $sqlLibro = "UPDATE libros SET existencias = existencias + 1 WHERE id_libro = :id_libro";
             $stmtLibro = $this->db->prepare($sqlLibro);
             $stmtLibro->execute([':id_libro' => $reserva['id_libro']]);
-        }
 
-        return $ok;
+            $this->db->commit();
+
+            return true;
+        } catch (Throwable $e) {
+            if ($this->db->inTransaction()) {
+                $this->db->rollBack();
+            }
+
+            error_log('Error al devolver reserva: ' . $e->getMessage());
+
+            return false;
+        }
     }
 
     public function contarActivasPorEstudiante(int $idEstudiante): int
@@ -65,8 +159,8 @@ class Reserva extends Model
 
         $stmt = $this->db->prepare($sql);
         $stmt->execute([':id_estudiante' => $idEstudiante]);
-        $resultado = $stmt->fetch();
-        return (int) ($resultado['total'] ?? 0);
+
+        return (int) ($stmt->fetch()['total'] ?? 0);
     }
 
     public function contarHistorialPorEstudiante(int $idEstudiante): int
@@ -77,7 +171,7 @@ class Reserva extends Model
 
         $stmt = $this->db->prepare($sql);
         $stmt->execute([':id_estudiante' => $idEstudiante]);
-        $resultado = $stmt->fetch();
-        return (int) ($resultado['total'] ?? 0);
+
+        return (int) ($stmt->fetch()['total'] ?? 0);
     }
 }

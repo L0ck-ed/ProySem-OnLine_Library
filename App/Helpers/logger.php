@@ -14,7 +14,7 @@ class Logger
             $sql = "INSERT INTO logs_login
                     (usuario, ip, navegador, metodo, url, resultado, fecha)
                     VALUES
-                    (:usuario, :ip, :navegador, :metodo, :url, :resultado, NOW())";
+                    (:usuario, :ip, :navegador, :metodo, :url, :resultado, CURRENT_TIMESTAMP)";
 
             $stmt = $db->prepare($sql);
 
@@ -46,5 +46,3 @@ class Logger
         return 'desconocida';
     }
 }
-
-

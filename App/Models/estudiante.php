@@ -39,7 +39,7 @@ class Estudiante extends Model implements AutenticableRepositorioInterface
     {
         $sql = "UPDATE estudiantes
                 SET intentos_fallidos = intentos_fallidos + 1,
-                    ultimo_intento = NOW()
+                    ultimo_intento = CURRENT_TIMESTAMP
                 WHERE id_estudiante = :id";
 
         $stmt = $this->db->prepare($sql);
@@ -59,8 +59,8 @@ class Estudiante extends Model implements AutenticableRepositorioInterface
     public function actualizarLogin(int $id): void
     {
         $sql = "UPDATE estudiantes
-                SET ultimo_login = NOW(),
-                    ultimo_intento = NOW(),
+                SET ultimo_login = CURRENT_TIMESTAMP,
+                    ultimo_intento = CURRENT_TIMESTAMP,
                     intentos_fallidos = 0
                 WHERE id_estudiante = :id";
 

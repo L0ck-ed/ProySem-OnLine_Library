@@ -23,11 +23,11 @@ class PortalController extends Controller
     private function datosSesion(): array
     {
         $idEstudiante = (int) Session::get('id_estudiante');
-        
+
         // Obtener datos del estudiante desde la BD (incluye carrera)
         $estudianteModel = new Estudiante();
         $estudiante = $estudianteModel->obtenerPorId($idEstudiante);
-        
+
         return [
             'nombreEstudiante' => Session::get('nombre_estudiante') ?? 'Estudiante',
             'cipSesion' => Session::get('cip') ?? '',
@@ -78,7 +78,7 @@ class PortalController extends Controller
         ]));
     }
 
-    
+
     public function catalogo(): void
     {
         $libroModel = new Libro();
@@ -114,7 +114,31 @@ class PortalController extends Controller
         $libro = (new Libro())->buscarPorId($id);
         $this->view('Client/Catalogo/detalle', array_merge($this->datosSesion(), [
             'libro' => $libro,
+            'exitoReserva' => Session::getFlash('exito_reserva'),
+            'errorReserva' => Session::getFlash('error_reserva'),
         ]));
+    }
+
+    public function reservar(): void
+    {
+        $idLibro = (int) ($_POST['id_libro'] ?? 0);
+        $idEstudiante = (int) Session::get('id_estudiante');
+
+        if ($idLibro <= 0 || $idEstudiante <= 0) {
+            Session::flash('error_reserva', 'Datos inválidos para procesar la reserva.');
+            $this->redirigirADetalle($idLibro);
+        }
+
+        $reservaModel = new Reserva();
+        $resultado = $reservaModel->crear($idEstudiante, $idLibro);
+
+        if ($resultado['ok']) {
+            Session::flash('exito_reserva', $resultado['mensaje']);
+        } else {
+            Session::flash('error_reserva', $resultado['mensaje']);
+        }
+
+        $this->redirigirADetalle($idLibro);
     }
 
     public function prestamos(): void
@@ -223,6 +247,12 @@ class PortalController extends Controller
             'estudiante' => $estudiante,
             'statsPerfil' => $statsPerfil,
         ]));
+    }
+
+    private function redirigirADetalle(int $idLibro): never
+    {
+        header('Location: ' . \App\Config\Config::url('portal/catalogo/detalle') . '?id=' . $idLibro);
+        exit;
     }
 
     private function redirigirASolicitudes(): never

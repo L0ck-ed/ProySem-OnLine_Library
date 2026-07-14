@@ -7,9 +7,10 @@ use PDO;
 
 class Libro extends Model
 {
-   
     public function listar(string $buscar = '', string $categoria = '', int $limit = 12, int $offset = 0): array
     {
+        $driver = $this->db->getAttribute(PDO::ATTR_DRIVER_NAME);
+
         $sql = "SELECT l.*, c.nombre AS categoria
                 FROM libros l
                 JOIN categorias c ON l.id_categoria = c.id_categoria
@@ -18,8 +19,11 @@ class Libro extends Model
         $params = [];
 
         if (!empty($buscar)) {
-            $sql .= " AND (l.titulo LIKE :buscar OR l.autor LIKE :buscar)";
-            $params[':buscar'] = '%' . $buscar . '%';
+            // Nombres de parámetro DISTINTOS aunque el valor sea el mismo:
+            // el driver sqlsrv no admite el mismo parámetro nombrado repetido en una consulta.
+            $sql .= " AND (l.titulo LIKE :buscar_titulo OR l.autor LIKE :buscar_autor)";
+            $params[':buscar_titulo'] = '%' . $buscar . '%';
+            $params[':buscar_autor'] = '%' . $buscar . '%';
         }
 
         if (!empty($categoria)) {
@@ -27,11 +31,16 @@ class Libro extends Model
             $params[':categoria'] = $categoria;
         }
 
-        $sql .= " ORDER BY l.titulo ASC LIMIT :limit OFFSET :offset";
+        $sql .= " ORDER BY l.titulo ASC";
+
+        if ($driver === 'sqlsrv') {
+            $sql .= " OFFSET :offset ROWS FETCH NEXT :limit ROWS ONLY";
+        } else {
+            $sql .= " LIMIT :limit OFFSET :offset";
+        }
 
         $stmt = $this->db->prepare($sql);
 
-        // Bind de valores
         foreach ($params as $key => $value) {
             $stmt->bindValue($key, $value, PDO::PARAM_STR);
         }
@@ -40,9 +49,9 @@ class Libro extends Model
         $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
 
         $stmt->execute();
+
         return $stmt->fetchAll();
     }
-
 
     public function contar(string $buscar = '', string $categoria = ''): int
     {
@@ -54,8 +63,9 @@ class Libro extends Model
         $params = [];
 
         if (!empty($buscar)) {
-            $sql .= " AND (l.titulo LIKE :buscar OR l.autor LIKE :buscar)";
-            $params[':buscar'] = '%' . $buscar . '%';
+            $sql .= " AND (l.titulo LIKE :buscar_titulo OR l.autor LIKE :buscar_autor)";
+            $params[':buscar_titulo'] = '%' . $buscar . '%';
+            $params[':buscar_autor'] = '%' . $buscar . '%';
         }
 
         if (!empty($categoria)) {
@@ -70,6 +80,7 @@ class Libro extends Model
         }
 
         $stmt->execute();
+
         return (int) $stmt->fetchColumn();
     }
 
@@ -87,16 +98,43 @@ class Libro extends Model
 
     public function recientes(int $limit = 4): array
     {
-        $sql = "SELECT l.id_libro, l.titulo, l.autor, l.existencias,
-                       c.nombre AS categoria
-                FROM libros l
-                INNER JOIN categorias c ON c.id_categoria = l.id_categoria
-                WHERE l.estado = 'Activo'
-                ORDER BY l.id_libro DESC
-                LIMIT :limit";
+        $driver = $this->db->getAttribute(PDO::ATTR_DRIVER_NAME);
 
-        $stmt = $this->db->prepare($sql);
-        $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+        if ($driver === 'sqlsrv') {
+
+            $sql = "SELECT TOP ($limit)
+                           l.id_libro,
+                           l.titulo,
+                           l.autor,
+                           l.existencias,
+                           c.nombre AS categoria
+                    FROM libros l
+                    INNER JOIN categorias c
+                        ON c.id_categoria = l.id_categoria
+                    WHERE l.estado = 'Activo'
+                    ORDER BY l.id_libro DESC";
+
+            $stmt = $this->db->prepare($sql);
+
+        } else {
+
+            $sql = "SELECT
+                           l.id_libro,
+                           l.titulo,
+                           l.autor,
+                           l.existencias,
+                           c.nombre AS categoria
+                    FROM libros l
+                    INNER JOIN categorias c
+                        ON c.id_categoria = l.id_categoria
+                    WHERE l.estado = 'Activo'
+                    ORDER BY l.id_libro DESC
+                    LIMIT :limit";
+
+            $stmt = $this->db->prepare($sql);
+            $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+        }
+
         $stmt->execute();
 
         return $stmt->fetchAll();
@@ -106,7 +144,8 @@ class Libro extends Model
     {
         $sql = "SELECT l.*, c.nombre AS categoria
                 FROM libros l
-                INNER JOIN categorias c ON c.id_categoria = l.id_categoria
+                INNER JOIN categorias c
+                    ON c.id_categoria = l.id_categoria
                 WHERE l.id_libro = :id";
 
         $stmt = $this->db->prepare($sql);
