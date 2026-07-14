@@ -1,16 +1,16 @@
 <?php
 
-/* Vista de solo interfaz. El formulario todavía no envía datos a un controlador. */
+$nombreEstudiante = $nombreEstudiante ?? 'Estudiante';
+$cipSesion = $cipSesion ?? '';
 
-$nombreEstudiante = $nombreEstudiante ?? 'Anthony Castillo';
-$cipSesion = $cipSesion ?? '8-1023-2265';
+$areas = $areas ?? [];
+$misSolicitudes = $misSolicitudes ?? [];
 
-$areas = $areas ?? ['Matemáticas', 'Ciencias', 'Tecnologías', 'Deporte', 'Salud', 'Revistas Científicas'];
-
-$misSolicitudes = $misSolicitudes ?? [
-    ['titulo' => 'Introduction to Algorithms (4ta ed.)', 'area' => 'Tecnologías', 'fecha' => '2026-06-20', 'estado' => 'Pendiente'],
-    ['titulo' => 'Anatomía y Fisiología Humana',          'area' => 'Salud',       'fecha' => '2026-05-14', 'estado' => 'Aprobado'],
-];
+$errorSolicitud = $errorSolicitud ?? null;
+$exitoSolicitud = $exitoSolicitud ?? null;
+$tituloAnterior = $tituloAnterior ?? '';
+$areaAnterior = $areaAnterior ?? '';
+$descripcionAnterior = $descripcionAnterior ?? '';
 
 function badgeEstadoSolicitud(string $estado): string
 {
@@ -32,31 +32,41 @@ require_once __DIR__ . '/../Partials/navbar.php';
     <h2><i class="fa-solid fa-circle-plus"></i> Solicitar un libro</h2>
     <p class="mb-4">¿No encontraste el libro que necesitas en el catálogo? Cuéntanos qué buscas y la administración revisará tu solicitud.</p>
 
+    <?php if ($errorSolicitud): ?>
+        <div class="alert alert-danger"><i class="fa-solid fa-circle-exclamation"></i> <?= htmlspecialchars($errorSolicitud) ?></div>
+    <?php endif; ?>
+
+    <?php if ($exitoSolicitud): ?>
+        <div class="alert alert-success"><i class="fa-solid fa-circle-check"></i> <?= htmlspecialchars($exitoSolicitud) ?></div>
+    <?php endif; ?>
+
     <div class="row g-4">
         <div class="col-lg-5">
             <div class="card p-4">
-                <form>
+                <form action="<?= App\Config\Config::url('portal/solicitudes') ?>" method="POST">
                     <div class="mb-3">
                         <label>Título del libro</label>
-                        <input type="text" class="form-control" placeholder="Ej: Introduction to Algorithms">
+                        <input type="text" name="titulo_libro" class="form-control" value="<?= htmlspecialchars($tituloAnterior) ?>" placeholder="Ej: Introduction to Algorithms" required>
                     </div>
 
                     <div class="mb-3">
                         <label>Área</label>
-                        <select class="form-select">
+                        <select name="area" class="form-select" required>
                             <option value="">Selecciona un área</option>
                             <?php foreach ($areas as $area): ?>
-                                <option value="<?= htmlspecialchars($area) ?>"><?= htmlspecialchars($area) ?></option>
+                                <option value="<?= htmlspecialchars($area) ?>" <?= $areaAnterior === $area ? 'selected' : '' ?>>
+                                    <?= htmlspecialchars($area) ?>
+                                </option>
                             <?php endforeach; ?>
                         </select>
                     </div>
 
                     <div class="mb-4">
                         <label>Descripción o motivo (opcional)</label>
-                        <textarea class="form-control" rows="4" placeholder="Cuéntanos para qué lo necesitas o dónde lo viste"></textarea>
+                        <textarea name="descripcion" class="form-control" rows="4" placeholder="Cuéntanos para qué lo necesitas o dónde lo viste"><?= htmlspecialchars($descripcionAnterior) ?></textarea>
                     </div>
 
-                    <button class="btn btn-primary w-100" type="button" disabled>
+                    <button class="btn btn-primary w-100" type="submit">
                         <i class="fa-solid fa-paper-plane"></i> Enviar solicitud
                     </button>
                 </form>
