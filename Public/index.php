@@ -80,6 +80,7 @@ $router->get('/portal/catalogo', [PortalController::class, 'catalogo']);
 $router->get('/portal/catalogo/detalle', [PortalController::class, 'detalle']);
 $router->get('/portal/prestamos', [PortalController::class, 'prestamos']);
 $router->get('/portal/solicitudes', [PortalController::class, 'solicitudes']);
+$router->post('/portal/solicitudes', [PortalController::class, 'guardarSolicitud']);
 $router->get('/portal/perfil', [PortalController::class, 'perfil']);
 
 $router->dispatch(
