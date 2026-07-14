@@ -7,44 +7,70 @@ use PDO;
 
 class Libro extends Model
 {
+   
     public function listar(string $buscar = '', string $categoria = '', int $limit = 12, int $offset = 0): array
     {
-        $sql = "SELECT l.id_libro, l.titulo, l.autor, l.existencias, l.imagen,
-                       c.nombre AS categoria
+        $sql = "SELECT l.*, c.nombre AS categoria
                 FROM libros l
-                INNER JOIN categorias c ON c.id_categoria = l.id_categoria
-                WHERE l.estado = 'Activo'
-                  AND (l.titulo LIKE :buscar OR l.autor LIKE :buscar)
-                  AND (:categoria = '' OR c.nombre = :categoria)
-                ORDER BY l.id_libro DESC
-                LIMIT :limit OFFSET :offset";
+                JOIN categorias c ON l.id_categoria = c.id_categoria
+                WHERE l.estado = 'Activo'";
+
+        $params = [];
+
+        if (!empty($buscar)) {
+            $sql .= " AND (l.titulo LIKE :buscar OR l.autor LIKE :buscar)";
+            $params[':buscar'] = '%' . $buscar . '%';
+        }
+
+        if (!empty($categoria)) {
+            $sql .= " AND c.nombre = :categoria";
+            $params[':categoria'] = $categoria;
+        }
+
+        $sql .= " ORDER BY l.titulo ASC LIMIT :limit OFFSET :offset";
 
         $stmt = $this->db->prepare($sql);
-        $stmt->bindValue(':buscar', '%' . $buscar . '%', PDO::PARAM_STR);
-        $stmt->bindValue(':categoria', $categoria, PDO::PARAM_STR);
+
+        // Bind de valores
+        foreach ($params as $key => $value) {
+            $stmt->bindValue($key, $value, PDO::PARAM_STR);
+        }
+
         $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
         $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
-        $stmt->execute();
 
+        $stmt->execute();
         return $stmt->fetchAll();
     }
+
 
     public function contar(string $buscar = '', string $categoria = ''): int
     {
         $sql = "SELECT COUNT(*) AS total
                 FROM libros l
-                INNER JOIN categorias c ON c.id_categoria = l.id_categoria
-                WHERE l.estado = 'Activo'
-                  AND (l.titulo LIKE :buscar OR l.autor LIKE :buscar)
-                  AND (:categoria = '' OR c.nombre = :categoria)";
+                JOIN categorias c ON l.id_categoria = c.id_categoria
+                WHERE l.estado = 'Activo'";
+
+        $params = [];
+
+        if (!empty($buscar)) {
+            $sql .= " AND (l.titulo LIKE :buscar OR l.autor LIKE :buscar)";
+            $params[':buscar'] = '%' . $buscar . '%';
+        }
+
+        if (!empty($categoria)) {
+            $sql .= " AND c.nombre = :categoria";
+            $params[':categoria'] = $categoria;
+        }
 
         $stmt = $this->db->prepare($sql);
-        $stmt->execute([
-            ':buscar' => '%' . $buscar . '%',
-            ':categoria' => $categoria
-        ]);
 
-        return (int) $stmt->fetch()['total'];
+        foreach ($params as $key => $value) {
+            $stmt->bindValue($key, $value, PDO::PARAM_STR);
+        }
+
+        $stmt->execute();
+        return (int) $stmt->fetchColumn();
     }
 
     public function contarTotal(): int

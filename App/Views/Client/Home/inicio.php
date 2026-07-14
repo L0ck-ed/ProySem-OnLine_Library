@@ -1,68 +1,54 @@
 <?php
-
-/*
- * Vista de solo interfaz (sin lógica de datos real todavía).
- * Cuando exista el controlador de Portal, estos valores llegarán
- * vía $data desde Controller->view(), reemplazando este mock.
- */
-
-$nombreEstudiante = $nombreEstudiante ?? 'Anthony Castillo';
-$cipSesion = $cipSesion ?? '8-1023-2265';
-$carreraSesion = $carreraSesion ?? 'Licenciatura en Desarrollo y Gestión de Software';
-
-$stats = $stats ?? [
-    'total_libros'      => 128,
-    'categorias'        => 5,
-    'prestamos_activos' => 2,
-    'disponibles_ahora' => 96,
-];
-
-$categoriasDestacadas = $categoriasDestacadas ?? [
-    ['nombre' => 'Sistemas',    'icono' => 'fa-solid fa-microchip'],
-    ['nombre' => 'Matemática',  'icono' => 'fa-solid fa-square-root-variable'],
-    ['nombre' => 'Química',     'icono' => 'fa-solid fa-flask'],
-    ['nombre' => 'Lógica',      'icono' => 'fa-solid fa-diagram-project'],
-    ['nombre' => 'Estadística', 'icono' => 'fa-solid fa-chart-line'],
-];
-
-$librosRecientes = $librosRecientes ?? [
-    ['titulo' => 'Clean Code',                 'autor' => 'Robert C. Martin', 'categoria' => 'Sistemas',   'existencias' => 4],
-    ['titulo' => 'Cálculo de una Variable',     'autor' => 'James Stewart',    'categoria' => 'Matemática', 'existencias' => 2],
-    ['titulo' => 'Química General',             'autor' => 'Raymond Chang',    'categoria' => 'Química',    'existencias' => 0],
-    ['titulo' => 'Estadística para Ingeniería', 'autor' => 'Montgomery',       'categoria' => 'Estadística','existencias' => 6],
-];
+// Los datos llegan desde el controlador a través de $data
+// Variables disponibles: $nombreEstudiante, $cipSesion, $carreraSesion,
+// $stats, $categoriasDestacadas, $librosRecientes
 
 require_once __DIR__ . '/../../Partials/header.php';
 require_once __DIR__ . '/../Partials/navbar.php';
-
 ?>
 
 <div class="container-fluid py-4 px-4">
 
     <div class="portal-hero mb-4">
         <div class="row align-items-center g-4">
+            <!-- Columna izquierda: mensaje de bienvenida -->
             <div class="col-lg-8">
-                <h2 class="mb-2">Hola, <?= htmlspecialchars(explode(' ', $nombreEstudiante)[0]) ?></h2>
-                <p class="mb-0"><?= htmlspecialchars($carreraSesion) ?> · CIP <?= htmlspecialchars($cipSesion) ?></p>
+                <h2 class="mb-2">Hola, <?= htmlspecialchars(explode(' ', $nombreEstudiante ?? 'Usuario')[0]) ?></h2>
+                <p class="mb-0"><?= htmlspecialchars($carreraSesion ?? 'Carrera no especificada') ?> · CIP <?= htmlspecialchars($cipSesion ?? '') ?></p>
                 <p class="mb-0">Busca un libro, revisa tus préstamos activos o solicita un título que no encuentres.</p>
             </div>
+
+            <!-- Columna derecha: formulario de búsqueda (estilo similar al catálogo) -->
             <div class="col-lg-4">
-                <form action="<?= App\Config\Config::url('portal/catalogo') ?>" method="GET" class="d-flex gap-2">
-                    <input type="text" name="buscar" class="form-control" placeholder="Buscar un libro...">
-                    <button class="btn btn-dark px-3">
-                        <i class="fa-solid fa-magnifying-glass"></i>
-                    </button>
-                </form>
+                <div class="card p-3">
+                    <form action="<?= \App\Config\Config::url('portal/catalogo') ?>" method="GET" class="d-flex flex-column gap-2">
+                        <div>
+                            <label for="buscar-home" class="form-label fw-semibold small">Buscar por título o autor</label>
+                            <input 
+                                type="text" 
+                                name="buscar" 
+                                id="buscar-home"
+                                class="form-control" 
+                                placeholder="Ej: Lógica Matemática, Brown..."
+                                value="<?= htmlspecialchars($busqueda ?? '') ?>"
+                            >
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="fa-solid fa-magnifying-glass"></i> Buscar
+                        </button>
+                    </form>
+                </div>
             </div>
         </div>
     </div>
 
+    <!-- STATS -->
     <div class="row g-3 mb-4">
         <div class="col-6 col-lg-3">
             <div class="stat-chip">
                 <i class="fa-solid fa-book"></i>
                 <div>
-                    <div class="stat-value"><?= $stats['total_libros'] ?></div>
+                    <div class="stat-value"><?= $stats['total_libros'] ?? 0 ?></div>
                     <div class="stat-label">Libros en catálogo</div>
                 </div>
             </div>
@@ -71,7 +57,7 @@ require_once __DIR__ . '/../Partials/navbar.php';
             <div class="stat-chip">
                 <i class="fa-solid fa-circle-check"></i>
                 <div>
-                    <div class="stat-value"><?= $stats['disponibles_ahora'] ?></div>
+                    <div class="stat-value"><?= $stats['disponibles_ahora'] ?? 0 ?></div>
                     <div class="stat-label">Disponibles ahora</div>
                 </div>
             </div>
@@ -80,7 +66,7 @@ require_once __DIR__ . '/../Partials/navbar.php';
             <div class="stat-chip">
                 <i class="fa-solid fa-tags"></i>
                 <div>
-                    <div class="stat-value"><?= $stats['categorias'] ?></div>
+                    <div class="stat-value"><?= $stats['categorias'] ?? 0 ?></div>
                     <div class="stat-label">Categorías</div>
                 </div>
             </div>
@@ -89,34 +75,36 @@ require_once __DIR__ . '/../Partials/navbar.php';
             <div class="stat-chip">
                 <i class="fa-solid fa-calendar-check"></i>
                 <div>
-                    <div class="stat-value"><?= $stats['prestamos_activos'] ?></div>
+                    <div class="stat-value"><?= $stats['prestamos_activos'] ?? 0 ?></div>
                     <div class="stat-label">Tus préstamos activos</div>
                 </div>
             </div>
         </div>
     </div>
 
+    <!-- CATEGORÍAS DESTACADAS -->
     <div class="d-flex align-items-center justify-content-between mb-3">
         <h5 class="mb-0"><i class="fa-solid fa-tags"></i> Categorías</h5>
     </div>
     <div class="d-flex flex-wrap gap-2 mb-4">
-        <?php foreach ($categoriasDestacadas as $cat): ?>
-            <a href="<?= App\Config\Config::url('portal/catalogo') ?>?categoria=<?= urlencode($cat['nombre']) ?>"
+        <?php foreach ($categoriasDestacadas ?? [] as $cat): ?>
+            <a href="<?= \App\Config\Config::url('portal/catalogo') ?>?categoria=<?= urlencode($cat['nombre']) ?>"
                class="btn btn-secondary btn-sm">
-                <i class="<?= $cat['icono'] ?>"></i> <?= htmlspecialchars($cat['nombre']) ?>
+                <i class="<?= $cat['icono'] ?? 'fa-solid fa-tag' ?>"></i> <?= htmlspecialchars($cat['nombre']) ?>
             </a>
         <?php endforeach; ?>
     </div>
 
+    <!-- LIBROS RECIENTES -->
     <div class="d-flex align-items-center justify-content-between mb-3">
         <h5 class="mb-0"><i class="fa-solid fa-clock-rotate-left"></i> Agregados recientemente</h5>
-        <a href="<?= App\Config\Config::url('portal/catalogo') ?>" class="fw-bold text-decoration-none">
+        <a href="<?= \App\Config\Config::url('portal/catalogo') ?>" class="fw-bold text-decoration-none">
             Ver catálogo completo <i class="fa-solid fa-arrow-right"></i>
         </a>
     </div>
 
     <div class="row g-4 mb-4">
-        <?php foreach ($librosRecientes as $libro): ?>
+        <?php foreach ($librosRecientes ?? [] as $libro): ?>
             <div class="col-md-6 col-lg-3">
                 <div class="book-card">
                     <div class="book-cover"><i class="fa-solid fa-book"></i></div>
@@ -131,7 +119,7 @@ require_once __DIR__ . '/../Partials/navbar.php';
                                 <span class="badge badge-existencias-agotado">Agotado</span>
                             <?php endif; ?>
                         </div>
-                        <a href="<?= App\Config\Config::url('portal/catalogo/detalle') ?>?id=<?= $libro['id_libro'] ?>" class="btn btn-primary btn-sm w-100 mt-2">
+                        <a href="<?= \App\Config\Config::url('portal/catalogo/detalle') ?>?id=<?= $libro['id_libro'] ?>" class="btn btn-primary btn-sm w-100 mt-2">
                             Ver detalle
                         </a>
                     </div>
@@ -140,13 +128,14 @@ require_once __DIR__ . '/../Partials/navbar.php';
         <?php endforeach; ?>
     </div>
 
+    <!-- ACCIONES RÁPIDAS -->
     <div class="row g-4">
         <div class="col-md-4">
             <div class="card p-4 h-100">
                 <i class="fa-solid fa-magnifying-glass mb-2" style="color:var(--caramel); font-size:26px;"></i>
                 <h5>Explora el catálogo</h5>
                 <p>Busca por título, autor o categoría y revisa la disponibilidad en tiempo real.</p>
-                <a href="<?= App\Config\Config::url('portal/catalogo') ?>" class="btn btn-secondary mt-auto">Ir al catálogo</a>
+                <a href="<?= \App\Config\Config::url('portal/catalogo') ?>" class="btn btn-secondary mt-auto">Ir al catálogo</a>
             </div>
         </div>
         <div class="col-md-4">
@@ -154,7 +143,7 @@ require_once __DIR__ . '/../Partials/navbar.php';
                 <i class="fa-solid fa-calendar-check mb-2" style="color:var(--caramel); font-size:26px;"></i>
                 <h5>Mis préstamos</h5>
                 <p>Consulta tus préstamos activos y tu historial de devoluciones.</p>
-                <a href="<?= App\Config\Config::url('portal/prestamos') ?>" class="btn btn-secondary mt-auto">Ver mis préstamos</a>
+                <a href="<?= \App\Config\Config::url('portal/prestamos') ?>" class="btn btn-secondary mt-auto">Ver mis préstamos</a>
             </div>
         </div>
         <div class="col-md-4">
@@ -162,7 +151,7 @@ require_once __DIR__ . '/../Partials/navbar.php';
                 <i class="fa-solid fa-circle-plus mb-2" style="color:var(--caramel); font-size:26px;"></i>
                 <h5>¿No lo encontraste?</h5>
                 <p>Solicita un libro que necesites y la administración revisará tu petición.</p>
-                <a href="<?= App\Config\Config::url('portal/solicitudes') ?>" class="btn btn-secondary mt-auto">Solicitar libro</a>
+                <a href="<?= \App\Config\Config::url('portal/solicitudes') ?>" class="btn btn-secondary mt-auto">Solicitar libro</a>
             </div>
         </div>
     </div>

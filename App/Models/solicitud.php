@@ -22,7 +22,8 @@ class Solicitud extends Model
 
     public function crear(int $idEstudiante, string $tituloLibro, string $area, ?string $descripcion): bool
     {
-        $sql = "INSERT INTO dbo.solicitudes (id_estudiante, titulo_libro, area, descripcion)
+        // Eliminado "dbo." para MySQL
+        $sql = "INSERT INTO solicitudes (id_estudiante, titulo_libro, area, descripcion)
                 VALUES (:id_estudiante, :titulo_libro, :area, :descripcion)";
 
         $stmt = $this->db->prepare($sql);
@@ -37,12 +38,13 @@ class Solicitud extends Model
 
     public function listarPorEstudiante(int $idEstudiante): array
     {
+        // Adaptado a MySQL: DATE_FORMAT en lugar de CONVERT, eliminado dbo.
         $sql = "SELECT
                     titulo_libro AS titulo,
                     area,
-                    CONVERT(varchar, fecha, 23) AS fecha,
+                    DATE_FORMAT(fecha, '%Y-%m-%d') AS fecha,
                     estado
-                FROM dbo.solicitudes
+                FROM solicitudes
                 WHERE id_estudiante = :id_estudiante
                 ORDER BY fecha DESC";
 
@@ -51,4 +53,17 @@ class Solicitud extends Model
 
         return $stmt->fetchAll();
     }
+
+    public function contarPorEstudiante(int $idEstudiante): int
+    {
+        $sql = "SELECT COUNT(*) AS total
+                FROM solicitudes
+                WHERE id_estudiante = :id_estudiante";
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([':id_estudiante' => $idEstudiante]);
+        $resultado = $stmt->fetch();
+        return (int) ($resultado['total'] ?? 0);
+    }
 }
+

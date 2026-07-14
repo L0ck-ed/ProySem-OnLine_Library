@@ -83,6 +83,8 @@ $router->get('/portal/solicitudes', [PortalController::class, 'solicitudes']);
 $router->post('/portal/solicitudes', [PortalController::class, 'guardarSolicitud']);
 $router->get('/portal/perfil', [PortalController::class, 'perfil']);
 
+$router->post('/portal/prestamos/devolver', [PortalController::class, 'devolver']);
+
 $router->dispatch(
     $_SERVER['REQUEST_URI'],
     $_SERVER['REQUEST_METHOD']

@@ -91,4 +91,28 @@ class Estudiante extends Model implements AutenticableRepositorioInterface
 
         return $stmt->fetch() ?: false;
     }
+
+    public function obtenerPorId(int $id): array|false
+    {
+        $sql = "SELECT e.*, c.nombre AS carrera
+                FROM estudiantes e
+                JOIN carreras c ON e.id_carrera = c.id_carrera
+                WHERE e.id_estudiante = :id";
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([':id' => $id]);
+        return $stmt->fetch();
+    }
+
+    public function obtenerPorCip(string $cip): array|false
+    {
+        $sql = "SELECT e.*, c.nombre AS carrera
+                FROM estudiantes e
+                JOIN carreras c ON e.id_carrera = c.id_carrera
+                WHERE e.cip = :cip";
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([':cip' => $cip]);
+        return $stmt->fetch();
+    }
 }

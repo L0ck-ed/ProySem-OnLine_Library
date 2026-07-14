@@ -1,5 +1,5 @@
 <?php
-
+/*
 namespace App\Configs;
 
 use PDO;
@@ -29,7 +29,10 @@ class DatabaseConfig
         }
     }
 }
-/*
+
+
+PARA CONECTAR CON SQL SERVER EL CONDIGO DE ARRIBA, PARA MYSQL EL DE ABAJO
+*/
 namespace App\Configs;
 
 use App\Config\Config;
@@ -57,4 +60,4 @@ class DatabaseConfig
             die("Error de conexión MySQL: " . $e->getMessage());
         }
     }
-}*/
+}
