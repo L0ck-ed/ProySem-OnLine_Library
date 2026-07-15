@@ -1,7 +1,7 @@
 <?php
 // Los datos llegan desde el controlador a través de $data
 // Variables disponibles: $nombreEstudiante, $cipSesion, $carreraSesion,
-// $stats, $categoriasDestacadas, $librosRecientes
+// $stats, $categoriasDestacadas, $librosRecientes, $topLibrosPorPeriodo
 
 require_once __DIR__ . '/../../Partials/header.php';
 require_once __DIR__ . '/../Partials/navbar.php';
@@ -128,6 +128,65 @@ require_once __DIR__ . '/../Partials/navbar.php';
         <?php endforeach; ?>
     </div>
 
+    <!-- ===== ESTADÍSTICAS: LIBROS MÁS USADOS POR PERIODO ===== -->
+    <div class="mt-5 pt-3 mb-5 pb-2">
+        <h5 class="mb-4"><i class="fa-solid fa-chart-simple"></i> Libros más usados por periodo</h5>
+        <div class="row g-4">
+            <?php foreach ($topLibrosPorPeriodo ?? [] as $index => $periodo): ?>
+                <div class="col-md-4">
+                    <div class="card h-100 shadow-sm" style="border-radius: 20px; overflow: hidden; border: none;">
+
+                        <!-- Encabezado oscuro (igual al hero) -->
+                        <div class="card-header" style="background: linear-gradient(135deg, #382417, #6D3C1C); padding: 12px 20px; border-bottom: none;">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span style="color: #FFF9F0; font-weight: 900;">
+                                    <i class="fa-regular fa-calendar"></i> <?= $periodo['nombre'] ?>
+                                </span>
+                                <span class="badge rounded-pill" style="background-color: #E7C196; color: #2E2118; font-weight: 900;">
+                                    <?= count($periodo['libros']) ?> libros
+                                </span>
+                            </div>
+                        </div>
+
+                        <!-- Cuerpo de la tarjeta -->
+                        <div class="card-body" style="padding: 20px; background: #FFFFFF;">
+                            <?php if (empty($periodo['libros'])): ?>
+                                <div class="text-center text-muted py-4">
+                                    <i class="fa-regular fa-face-frown fa-2x mb-2"></i>
+                                    <p class="mb-0">Sin préstamos en este periodo.</p>
+                                </div>
+                            <?php else: ?>
+                                <!-- Gráfico de pastel con tamaño fijo (120px) -->
+                                <div class="text-center mb-3">
+                                    <div style="display: inline-block; width: 120px; height: 120px;">
+                                        <canvas id="chart-periodo-<?= $index ?>" style="width:120px; height:120px;"></canvas>
+                                    </div>
+                                </div>
+
+                                <!-- Lista de libros con scroll si son muchos -->
+                                <div class="mt-2" style="max-height: 180px; overflow-y: auto; padding-right: 5px;">
+                                    <?php foreach ($periodo['libros'] as $libro): ?>
+                                        <div class="d-flex justify-content-between align-items-center py-2 border-bottom border-light">
+                                            <div style="flex: 1; min-width: 0;">
+                                                <span class="fw-bold small" style="display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                                    <?= htmlspecialchars($libro['titulo']) ?>
+                                                </span>
+                                                <small class="text-muted"><?= htmlspecialchars($libro['autor']) ?></small>
+                                            </div>
+                                            <span class="badge rounded-pill ms-2" style="background-color: #E7C196; color: #2E2118; font-weight: 900; flex-shrink: 0;">
+                                                <?= $libro['total_prestamos'] ?>
+                                            </span>
+                                        </div>
+                                    <?php endforeach; ?>
+                                </div>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                </div>
+            <?php endforeach; ?>
+        </div>
+    </div>
+
     <!-- ACCIONES RÁPIDAS -->
     <div class="row g-4">
         <div class="col-md-4">
@@ -155,7 +214,63 @@ require_once __DIR__ . '/../Partials/navbar.php';
             </div>
         </div>
     </div>
-
 </div>
 
 <?php require_once __DIR__ . '/../../Partials/footer.php'; ?>
+
+<!-- ===== SCRIPTS PARA GRÁFICOS ===== -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="<?= App\Config\Config::assetsUrl() ?>/JavaScript/chart-tooltip.js?v=modern-library-1"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+
+    <?php foreach ($topLibrosPorPeriodo ?? [] as $index => $periodo): ?>
+        <?php if (!empty($periodo['libros'])): ?>
+            const ctx<?= $index ?> = document.getElementById('chart-periodo-<?= $index ?>');
+            if (ctx<?= $index ?>) {
+                const colors = [
+                    '#4e79a7', '#f28e2b', '#e15759', '#59a14f', '#edc948',
+                    '#b07aa1', '#ff9da7', '#9c755f', '#bab0ac', '#8cd17d'
+                ];
+                new Chart(ctx<?= $index ?>.getContext('2d'), {
+                    type: 'pie',
+                    data: {
+                        labels: <?= json_encode(array_column($periodo['libros'], 'titulo')) ?>,
+                        datasets: [{
+                            data: <?= json_encode(array_column($periodo['libros'], 'total_prestamos')) ?>,
+                            backgroundColor: colors.slice(0, <?= count($periodo['libros']) ?>),
+                            borderWidth: 2,
+                            borderColor: '#ffffff'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: true,
+                        plugins: {
+                            legend: {
+                                display: false
+                            },
+                            tooltip: {
+                                enabled: false, // Se desactiva el tooltip nativo (se recorta dentro del canvas)
+                                position: 'nearest',
+                                external: externalTooltipHandler, // 👈 Tooltip en HTML, no se corta
+                                callbacks: {
+                                    title: function() {
+                                        return ''; // Se oculta: el nombre ya va en el label de abajo
+                                    },
+                                    label: function(context) {
+                                        // Muestra el nombre completo sin truncar
+                                        return context.label + ': ' + context.parsed + ' préstamo(s)';
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+        <?php endif; ?>
+    <?php endforeach; ?>
+});
+</script>
+</body>
+</html>

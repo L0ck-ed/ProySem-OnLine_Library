@@ -3,7 +3,7 @@
 use App\Config\Config;
 
 $nombreEstudiante = $nombreEstudiante ?? 'Estudiante';
-$cipSesion = $cipSesion ?? '8-000-0000';
+$cipSesion = $cipSesion ?? '0-000-0000';
 
 $currentPath = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
 $route = str_replace(Config::baseUrl(), '', $currentPath);

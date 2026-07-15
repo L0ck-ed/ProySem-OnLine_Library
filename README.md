@@ -217,6 +217,7 @@ Actualmente se está trabajando en mejorar la estructura de carpetas, nombres de
 - Domínguez Rubén, 8-988-2361
 - González Eduardo, 8-1018-1193
 - Rosales Nicole, 8-1031-1508
+- Guillermo Siuki, 8-1020-658
 
 Proyecto desarrollado para la materia **Desarrollo de Software VII**.
 

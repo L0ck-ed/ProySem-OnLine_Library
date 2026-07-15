@@ -39,14 +39,19 @@ class PortalController extends Controller
     {
         $libroModel = new Libro();
         $categoriaModel = new Categoria();
+        $reservaModel = new \App\Models\Reserva();
 
+        $idEstudiante = (int) Session::get('id_estudiante');
+
+        // Stats principales
         $stats = [
             'total_libros' => $libroModel->contarTotal(),
             'disponibles_ahora' => $libroModel->contarDisponibles(),
             'categorias' => $categoriaModel->contar(),
-            'prestamos_activos' => 0,
+            'prestamos_activos' => $reservaModel->contarActivasPorEstudiante($idEstudiante),
         ];
 
+        // Categorías destacadas
         $iconosPorCategoria = [
             'Sistemas' => 'fa-solid fa-microchip',
             'Matemática' => 'fa-solid fa-square-root-variable',
@@ -65,19 +70,47 @@ class PortalController extends Controller
 
         $librosRecientes = $libroModel->recientes(4);
 
-        // Obtener categorías para el select del home
-        $categorias = array_map(fn($c) => $c['nombre'], $categoriaModel->listar());
+        // Libros más usados por periodos de 4 meses
+        $year = date('Y');
+        $periodos = [
+            [
+                'nombre' => 'Ene - Abr',
+                'inicio' => $year . '-01-01',
+                'fin'    => $year . '-04-30',
+            ],
+            [
+                'nombre' => 'May - Ago',
+                'inicio' => $year . '-05-01',
+                'fin'    => $year . '-08-31',
+            ],
+            [
+                'nombre' => 'Sep - Dic',
+                'inicio' => $year . '-09-01',
+                'fin'    => $year . '-12-31',
+            ],
+        ];
+
+        $topLibrosPorPeriodo = [];
+        foreach ($periodos as $periodo) {
+            $libros = $reservaModel->librosMasUsados($periodo['inicio'], $periodo['fin'], 5);
+            $topLibrosPorPeriodo[] = [
+                'nombre' => $periodo['nombre'],
+                'libros' => $libros,
+                'labels' => array_column($libros, 'titulo'),
+                'data' => array_column($libros, 'total_prestamos'),
+            ];
+        }
 
         $this->view('Client/Home/inicio', array_merge($this->datosSesion(), [
             'stats' => $stats,
             'categoriasDestacadas' => $categoriasDestacadas,
             'librosRecientes' => $librosRecientes,
+            'topLibrosPorPeriodo' => $topLibrosPorPeriodo, // <--- Nuevo
             'busqueda' => '',
-            'categorias' => $categorias,
+            'categorias' => array_map(fn($c) => $c['nombre'], $categoriaModel->listar()),
             'categoriaSeleccionada' => '',
         ]));
     }
-
 
     public function catalogo(): void
     {
