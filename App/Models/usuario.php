@@ -206,7 +206,6 @@ class Usuario extends Model
                             intentos_fallidos,
                             bloqueado
                        )
-                       OUTPUT INSERTED.id_usuario
                        VALUES (
                             :nombre,
                             :usuario,
@@ -226,8 +225,7 @@ class Usuario extends Model
                 ':correo' => $data['correo'] ?? null,
             ]);
 
-            $idUsuario = (int) $stmtUsuario->fetchColumn();
-            $stmtUsuario->closeCursor();
+            $idUsuario = (int) $this->db->lastInsertId();
 
             if ($idUsuario <= 0) {
                 throw new \RuntimeException('No se pudo obtener el identificador del usuario.');
@@ -263,13 +261,18 @@ class Usuario extends Model
 
     public function listar(string $buscar = '', int $limit = 10, int $offset = 0): array
     {
+        // GROUP_CONCAT (MySQL) vs STRING_AGG (SQL Server) para unir los roles de un usuario en un solo texto
+        $agregarRoles = Sql::esSqlServer($this->db)
+            ? "STRING_AGG(r.nombre, ', ')"
+            : "GROUP_CONCAT(r.nombre SEPARATOR ', ')";
+
         $sql =
             "SELECT
                 u.id_usuario,
                 u.nombre,
                 u.usuario,
                 COALESCE(
-                    STRING_AGG(r.nombre, ', '),
+                    {$agregarRoles},
                     'Sin rol'
                 ) AS rol,
                 CASE

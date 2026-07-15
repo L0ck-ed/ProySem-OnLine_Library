@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Core\Model;
+use App\Core\Sql;
 use PDO;
 use Throwable;
 
@@ -177,7 +178,9 @@ class Reserva extends Model
 
     public function librosMasUsados(string $fechaInicio, string $fechaFin, int $limite = 10): array
     {
-        $sql = "SELECT 
+        $topInfo = Sql::top($this->db, $limite);
+
+        $sql = "SELECT {$topInfo['antes']}
                     l.id_libro,
                     l.titulo,
                     l.autor,
@@ -188,12 +191,11 @@ class Reserva extends Model
                 AND r.estado IN ('Prestado', 'Devuelto')
                 GROUP BY l.id_libro, l.titulo, l.autor
                 ORDER BY total_prestamos DESC
-                LIMIT :limite";
+                {$topInfo['despues']}";
 
         $stmt = $this->db->prepare($sql);
         $stmt->bindValue(':inicio', $fechaInicio);
         $stmt->bindValue(':fin', $fechaFin);
-        $stmt->bindValue(':limite', $limite, \PDO::PARAM_INT);
         $stmt->execute();
 
         return $stmt->fetchAll();
