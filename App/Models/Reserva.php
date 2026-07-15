@@ -174,4 +174,28 @@ class Reserva extends Model
 
         return (int) ($stmt->fetch()['total'] ?? 0);
     }
+
+    public function librosMasUsados(string $fechaInicio, string $fechaFin, int $limite = 10): array
+    {
+        $sql = "SELECT 
+                    l.id_libro,
+                    l.titulo,
+                    l.autor,
+                    COUNT(r.id_reserva) AS total_prestamos
+                FROM reservas r
+                JOIN libros l ON r.id_libro = l.id_libro
+                WHERE r.fecha_reserva BETWEEN :inicio AND :fin
+                AND r.estado IN ('Prestado', 'Devuelto')
+                GROUP BY l.id_libro, l.titulo, l.autor
+                ORDER BY total_prestamos DESC
+                LIMIT :limite";
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->bindValue(':inicio', $fechaInicio);
+        $stmt->bindValue(':fin', $fechaFin);
+        $stmt->bindValue(':limite', $limite, \PDO::PARAM_INT);
+        $stmt->execute();
+
+        return $stmt->fetchAll();
+    }
 }

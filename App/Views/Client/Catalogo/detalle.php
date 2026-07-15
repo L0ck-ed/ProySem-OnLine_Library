@@ -53,16 +53,16 @@ require_once __DIR__ . '/../Partials/navbar.php';
 
                 <p><?= htmlspecialchars($libro['descripcion']) ?></p>
 
+                <?php if (!empty($exitoReserva)): ?>
+                    <div class="alert alert-success"><?= htmlspecialchars($exitoReserva) ?></div>
+                <?php endif; ?>
+
+                <?php if (!empty($errorReserva)): ?>
+                    <div class="alert alert-danger"><?= htmlspecialchars($errorReserva) ?></div>
+                <?php endif; ?>
+
                 <?php if ($libro['existencias'] > 0): ?>
                     <span class="badge badge-existencias-ok mb-3"><?= $libro['existencias'] ?> unidades disponibles</span>
-
-                    <?php if (!empty($exitoReserva)): ?>
-                        <div class="alert alert-success"><?= htmlspecialchars($exitoReserva) ?></div>
-                    <?php endif; ?>
-
-                    <?php if (!empty($errorReserva)): ?>
-                        <div class="alert alert-danger"><?= htmlspecialchars($errorReserva) ?></div>
-                    <?php endif; ?>
 
                     <form method="POST" action="<?= App\Config\Config::url('portal/reservar') ?>">
                         <input type="hidden" name="id_libro" value="<?= (int) $libro['id_libro'] ?>">
@@ -72,12 +72,14 @@ require_once __DIR__ . '/../Partials/navbar.php';
                     </form>
                 <?php else: ?>
                     <span class="badge badge-existencias-agotado mb-3">Sin existencias disponibles</span>
-                    <div class="alert alert-danger">
-                        Este libro no tiene unidades disponibles en este momento.
-                        <a href="<?= App\Config\Config::url('portal/solicitudes') ?>" class="fw-bold">
-                            Puedes solicitar su compra aquí.
-                        </a>
-                    </div>
+                    <?php if (empty($exitoReserva)): ?>
+                        <div class="alert alert-danger">
+                            Este libro no tiene unidades disponibles en este momento.
+                            <a href="<?= App\Config\Config::url('portal/solicitudes') ?>" class="fw-bold">
+                                Puedes solicitar su compra aquí.
+                            </a>
+                        </div>
+                    <?php endif; ?>
                 <?php endif; ?>
             </div>
         </div>
