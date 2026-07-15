@@ -414,4 +414,62 @@ class Usuario extends Model
 
         return $stmt->fetchAll(\PDO::FETCH_COLUMN);
     }
+
+    public function listarDisponiblesParaEstudiante(): array
+    {
+        $sql = "SELECT DISTINCT
+                u.id_usuario,
+                u.nombre,
+                u.usuario,
+                u.correo
+            FROM usuarios u
+            INNER JOIN usuarios_roles ur
+                ON ur.id_usuario = u.id_usuario
+            INNER JOIN roles r
+                ON r.id_rol = ur.id_rol
+            LEFT JOIN estudiantes e
+                ON e.id_usuario = u.id_usuario
+            WHERE u.estado = 1
+              AND r.estado = 1
+              AND r.nombre = :nombre_rol
+              AND e.id_estudiante IS NULL
+            ORDER BY u.nombre ASC";
+
+        $stmt = $this->db->prepare($sql);
+
+        $stmt->execute([
+            ':nombre_rol' => 'Estudiante',
+        ]);
+
+        return $stmt->fetchAll();
+    }
+
+    public function listarDisponiblesParaProfesor(): array
+    {
+        $sql = "SELECT DISTINCT
+                u.id_usuario,
+                u.nombre,
+                u.usuario,
+                u.correo
+            FROM usuarios u
+            INNER JOIN usuarios_roles ur
+                ON ur.id_usuario = u.id_usuario
+            INNER JOIN roles r
+                ON r.id_rol = ur.id_rol
+            LEFT JOIN profesores p
+                ON p.id_usuario = u.id_usuario
+            WHERE u.estado = 1
+              AND r.estado = 1
+              AND r.nombre = :nombre_rol
+              AND p.id_profesor IS NULL
+            ORDER BY u.nombre ASC";
+
+        $stmt = $this->db->prepare($sql);
+
+        $stmt->execute([
+            ':nombre_rol' => 'Profesor',
+        ]);
+
+        return $stmt->fetchAll();
+    }
 }

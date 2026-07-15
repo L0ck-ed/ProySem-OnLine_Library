@@ -45,30 +45,72 @@ function activeSidebar(string $path, string $route): string
         </a>
     <?php endif; ?>
 
-    <a href="#">
-        <i class="fa-solid fa-user-graduate"></i>
-        Estudiantes
-    </a>
+    <?php if (Auth::tienePermiso('profesores.ver')): ?>
+        <a
+            href="<?= Config::url('profesores') ?>"
+            class="list-group-item list-group-item-action"
+        >
+            <i class="fa-solid fa-chalkboard-user me-2"></i>
+            Profesores
+        </a>
+    <?php endif; ?>
+
+    <?php if (Auth::tienePermiso('estudiantes.ver')): ?>
+        <a
+            href="<?= Config::url('estudiantes') ?>"
+            class="list-group-item list-group-item-action"
+        >
+            <i class="fa-solid fa-user-graduate me-2"></i>
+            Estudiantes
+        </a>
+    <?php endif; ?>
 
     <a href="#">
         <i class="fa-solid fa-building-columns"></i>
         Carreras
     </a>
 
-    <a href="#">
-        <i class="fa-solid fa-tags"></i>
-        Categorías
-    </a>
+    <?php if (Auth::tienePermiso('categorias.ver')): ?>
+        <a
+            href="<?= Config::url('categorias') ?>"
+            class="list-group-item list-group-item-action"
+        >
+            <i class="fa-solid fa-tags me-2"></i>
+            Categorías
+        </a>
+    <?php endif; ?>
 
-    <a href="#">
-        <i class="fa-solid fa-book"></i>
-        Libros
-    </a>
+    <?php if (Auth::tienePermiso('libros.ver')): ?>
+        <a
+            href="<?= Config::url('libros') ?>"
+            class="list-group-item list-group-item-action"
+        >
+            <i class="fa-solid fa-book me-2"></i>
+            Libros
+        </a>
+    <?php endif; ?>
 
-    <a href="#">
-        <i class="fa-solid fa-calendar-check"></i>
-        Reservas
-    </a>
+    <?php if (Auth::tienePermiso('reservas.ver')): ?>
+        <a
+            href="<?= Config::url('reservas') ?>"
+            class="list-group-item list-group-item-action"
+        >
+            <i class="fa-solid fa-calendar-check me-2"></i>
+            Reservas
+        </a>
+    <?php endif; ?>
+
+    <?php if (Auth::tienePermiso('solicitudes.ver')): ?>
+        <a
+            href="<?= Config::url('solicitudes') ?>"
+            class="list-group-item list-group-item-action"
+        >
+            <i
+                class="fa-solid fa-book-circle-plus me-2"
+            ></i>
+            Solicitudes
+        </a>
+    <?php endif; ?>
 
     <a href="#">
         <i class="fa-solid fa-chart-column"></i>

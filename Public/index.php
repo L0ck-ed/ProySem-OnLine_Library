@@ -1,6 +1,9 @@
 <?php
-
 declare(strict_types=1);
+
+ini_set('display_errors', '1');
+ini_set('display_startup_errors', '1');
+error_reporting(E_ALL);
 
 /* Autoload de Composer */
 $composerAutoload = __DIR__ . '/../vendor/autoload.php';
@@ -74,7 +77,13 @@ use App\Controllers\UsuarioController;
 use App\Controllers\EstudianteAuthController;
 use App\Controllers\PortalController;
 
+use App\Controllers\Admin\EstudianteController;
 use App\Controllers\Admin\RolController;
+use App\Controllers\Admin\ProfesorController;
+use App\Controllers\Admin\CategoriaController;
+use App\Controllers\Admin\LibroController;
+use App\Controllers\Admin\ReservaController;
+use App\Controllers\Admin\SolicitudController;
 
 /* Inicialización del Router */
 $router = new Router();
@@ -95,6 +104,37 @@ $router->get('/usuarios/editar', [UsuarioController::class, 'editar']);
 $router->post('/usuarios/actualizar', [UsuarioController::class, 'actualizar']);
 $router->post('/usuarios/cambiar-estado', [UsuarioController::class, 'cambiarEstado']);
 
+/* PROFESORES */
+$router->get('/profesores', [ProfesorController::class, 'index']);
+$router->get('/profesores/crear', [ProfesorController::class, 'crear']);
+$router->post('/profesores/guardar', [ProfesorController::class, 'guardar']);
+$router->get('/profesores/editar', [ProfesorController::class, 'editar']);
+$router->post('/profesores/actualizar', [ProfesorController::class, 'actualizar']);
+$router->post('/profesores/cambiar-estado', [ProfesorController::class, 'cambiarEstado']);
+$router->get('/profesores/departamentos-por-facultad', [
+    ProfesorController::class,
+    'departamentosPorFacultad',
+]);
+
+/* ESTUDIANTES */
+$router->get('/estudiantes', [EstudianteController::class, 'index']);
+$router->get('/estudiantes/crear', [EstudianteController::class, 'crear']);
+$router->post('/estudiantes/guardar', [EstudianteController::class, 'guardar']);
+$router->get('/estudiantes/carreras-por-facultad', [
+    EstudianteController::class,
+    'carrerasPorFacultad',
+]);
+$router->get('/estudiantes', [EstudianteController::class, 'index']);
+$router->get('/estudiantes/crear', [EstudianteController::class, 'crear']);
+$router->post('/estudiantes/guardar', [EstudianteController::class, 'guardar']);
+$router->get('/estudiantes/editar', [EstudianteController::class, 'editar']);
+$router->post('/estudiantes/actualizar', [EstudianteController::class, 'actualizar']);
+$router->post('/estudiantes/cambiar-estado', [EstudianteController::class, 'cambiarEstado']);
+$router->get('/estudiantes/carreras-por-facultad', [
+    EstudianteController::class,
+    'carrerasPorFacultad',
+]);
+
 /* Módulo de roles y permisos */
 $router->get('/roles', [RolController::class, 'index']);
 $router->get('/roles/permisos', [RolController::class, 'permisos']);
@@ -104,6 +144,36 @@ $router->post('/roles/guardar', [RolController::class, 'guardar']);
 $router->get('/roles/editar', [RolController::class, 'editar']);
 $router->post('/roles/actualizar', [RolController::class, 'actualizar']);
 $router->post('/roles/cambiar-estado', [RolController::class, 'cambiarEstado']);
+
+/* SOLICITUDES DE LIBROS */
+$router->get('/solicitudes', [SolicitudController::class, 'index']);
+$router->get('/solicitudes/gestionar', [SolicitudController::class, 'gestionar']);
+$router->post('/solicitudes/actualizar', [SolicitudController::class, 'actualizar']);
+
+/* LIBROS */
+$router->get('/libros', [LibroController::class, 'index']);
+$router->get('/libros/crear', [LibroController::class, 'crear']);
+$router->post('/libros/guardar', [LibroController::class, 'guardar']);
+$router->get('/libros/editar', [LibroController::class, 'editar']);
+$router->post('/libros/actualizar', [LibroController::class, 'actualizar']);
+$router->post('/libros/cambiar-estado', [LibroController::class, 'cambiarEstado']);
+
+/* CATEGORÍAS */
+$router->get('/categorias', [CategoriaController::class, 'index']);
+$router->get('/categorias/crear', [CategoriaController::class, 'crear']);
+$router->post('/categorias/guardar', [CategoriaController::class, 'guardar']);
+$router->get('/categorias/editar', [CategoriaController::class, 'editar']);
+$router->post('/categorias/actualizar', [CategoriaController::class, 'actualizar']);
+$router->post('/categorias/cambiar-estado', [CategoriaController::class, 'cambiarEstado']);
+
+/* RESERVAS Y PRÉSTAMOS */
+$router->get('/reservas', [ReservaController::class, 'index']);
+$router->post('/reservas/aprobar', [ReservaController::class, 'aprobar']);
+$router->post('/reservas/prestar', [ReservaController::class, 'prestar']);
+$router->post('/reservas/devolver', [ReservaController::class, 'devolver']);
+$router->post('/reservas/cancelar', [ReservaController::class, 'cancelar']);
+$router->get('/reservas/reporte', [ReservaController::class, 'reporte']);
+$router->get('/reservas/reporte/excel', [ReservaController::class, 'exportarExcel']);
 
 /* Autenticación del portal */
 $router->get('/portal/login', [EstudianteAuthController::class, 'index']);
@@ -130,4 +200,5 @@ $router->post('/portal/solicitudes', [PortalController::class, 'guardarSolicitud
 $router->get('/portal/perfil', [PortalController::class, 'perfil']);
 
 /* Ejecución del Router */
+$rutaActual = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH);
 $router->dispatch($_SERVER['REQUEST_URI'], $_SERVER['REQUEST_METHOD']);

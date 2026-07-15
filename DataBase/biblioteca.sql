@@ -1172,3 +1172,129 @@ GO
       WHERE u.usuario = 'admin'
         AND r.nombre = 'Administrador';
    ============================================================ */
+
+   USE BibliotecaDigitalDB;
+GO
+
+/* ==================================================
+   1. CREAR TABLA DE FACULTADES
+   ================================================== */
+
+IF OBJECT_ID('dbo.facultades', 'U') IS NULL
+BEGIN
+    CREATE TABLE dbo.facultades (
+        id_facultad INT IDENTITY(1,1) PRIMARY KEY,
+        nombre NVARCHAR(150) NOT NULL,
+        descripcion NVARCHAR(255) NULL,
+        estado BIT NOT NULL
+            CONSTRAINT DF_facultades_estado DEFAULT 1,
+        fecha_creacion DATETIME2 NOT NULL
+            CONSTRAINT DF_facultades_fecha_creacion
+            DEFAULT SYSDATETIME(),
+
+        CONSTRAINT UQ_facultades_nombre UNIQUE (nombre)
+    );
+END;
+GO
+
+/* ==================================================
+   2. AGREGAR FACULTAD A LA TABLA CARRERAS
+   ================================================== */
+
+IF COL_LENGTH('dbo.carreras', 'id_facultad') IS NULL
+BEGIN
+    ALTER TABLE dbo.carreras
+    ADD id_facultad INT NULL;
+END;
+GO
+
+/* ==================================================
+   3. CREAR LA LLAVE FORÁNEA
+   ================================================== */
+
+IF NOT EXISTS (
+    SELECT 1
+    FROM sys.foreign_keys
+    WHERE name = 'FK_carreras_facultades'
+)
+BEGIN
+    ALTER TABLE dbo.carreras
+    ADD CONSTRAINT FK_carreras_facultades
+        FOREIGN KEY (id_facultad)
+        REFERENCES dbo.facultades(id_facultad)
+        ON UPDATE CASCADE
+        ON DELETE NO ACTION;
+END;
+GO
+
+/* ==================================================
+   4. CREAR ÍNDICE PARA FILTRAR CARRERAS
+   ================================================== */
+
+IF NOT EXISTS (
+    SELECT 1
+    FROM sys.indexes
+    WHERE name = 'IX_carreras_id_facultad'
+      AND object_id = OBJECT_ID('dbo.carreras')
+)
+BEGIN
+    CREATE INDEX IX_carreras_id_facultad
+    ON dbo.carreras(id_facultad);
+END;
+GO
+
+/* ==================================================
+   5. VERIFICAR LA ESTRUCTURA
+   ================================================== */
+
+SELECT
+    COLUMN_NAME,
+    DATA_TYPE,
+    IS_NULLABLE
+FROM INFORMATION_SCHEMA.COLUMNS
+WHERE TABLE_NAME = 'carreras'
+ORDER BY ORDINAL_POSITION;
+
+SELECT *
+FROM dbo.facultades;
+GO
+
+USE BibliotecaDigitalDB;
+GO
+
+MERGE dbo.facultades AS destino
+USING (
+    VALUES
+        (N'Facultad de Ciencias y Tecnología'),
+        (N'Facultad de Ingeniería Civil'),
+        (N'Facultad de Ingeniería Eléctrica'),
+        (N'Facultad de Ingeniería Industrial'),
+        (N'Facultad de Ingeniería Mecánica'),
+        (N'Facultad de Ingeniería de Sistemas Computacionales')
+) AS origen(nombre)
+ON destino.nombre = origen.nombre
+
+WHEN NOT MATCHED THEN
+    INSERT (
+        nombre,
+        descripcion,
+        estado
+    )
+    VALUES (
+        origen.nombre,
+        NULL,
+        1
+    )
+
+WHEN MATCHED THEN
+    UPDATE SET
+        destino.estado = 1;
+GO
+
+SELECT
+    id_facultad,
+    nombre,
+    estado
+FROM dbo.facultades
+ORDER BY nombre;
+GO
