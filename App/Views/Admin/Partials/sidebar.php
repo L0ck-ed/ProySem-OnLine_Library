@@ -1,6 +1,7 @@
 <?php
 
 use App\Config\Config;
+use App\Middleware\Auth;
 
 $currentPath = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
 $route = str_replace(Config::baseUrl(), '', $currentPath);
@@ -14,7 +15,6 @@ function activeSidebar(string $path, string $route): string
 {
     return str_starts_with($route, $path) ? 'active' : '';
 }
-
 ?>
 
 <div class="sidebar">
@@ -28,10 +28,22 @@ function activeSidebar(string $path, string $route): string
         Dashboard
     </a>
 
-    <a href="<?= Config::baseUrl() ?>/usuarios" class="<?= activeSidebar('/usuarios', $route) ?>">
-        <i class="fa-solid fa-users"></i>
-        Usuarios
-    </a>
+    <?php if (Auth::tienePermiso('usuarios.ver')): ?>
+        <a href="<?= Config::url('usuarios') ?>">
+            <i class="fa-solid fa-users"></i>
+            Usuarios
+        </a>
+    <?php endif; ?>
+
+    <?php if (Auth::tienePermiso('roles.gestionar')): ?>
+        <a
+            href="<?= Config::url('roles') ?>"
+            class="nav-link"
+        >
+            <i class="fa-solid fa-user-shield"></i>
+            Roles y permisos
+        </a>
+    <?php endif; ?>
 
     <a href="#">
         <i class="fa-solid fa-user-graduate"></i>

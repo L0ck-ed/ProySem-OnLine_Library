@@ -11,7 +11,8 @@ $old = Session::getFlash('old_usuario') ?? [];
 
 $nombreActual = $old['nombre'] ?? $usuario['nombre'];
 $usuarioActual = $old['usuario'] ?? $usuario['usuario'];
-$idRolActual = (int) ($old['id_rol'] ?? $usuario['id_rol']);
+$rolesSeleccionados = $old['id_roles'] ?? ($rolesUsuario ?? []);
+$rolesSeleccionados = array_map('intval', (array) $rolesSeleccionados);
 $estadoActual = (int) ($old['estado'] ?? $usuario['estado']);
 ?>
 
@@ -101,29 +102,39 @@ $estadoActual = (int) ($old['estado'] ?? $usuario['estado']);
                     </div>
 
                     <div class="mb-3">
-                        <label for="id_rol" class="form-label">
-                            Rol
+                        <label class="form-label">
+                            Roles
                         </label>
 
-                        <select
-                            name="id_rol"
-                            id="id_rol"
-                            class="form-select"
-                            required
-                        >
-                            <option value="">
-                                Seleccione un rol
-                            </option>
-
+                        <div class="border rounded p-3">
                             <?php foreach ($roles as $rol): ?>
-                                <option
-                                    value="<?= (int) $rol['id_rol'] ?>"
-                                    <?= $idRolActual === (int) $rol['id_rol'] ? 'selected' : '' ?>
-                                >
-                                    <?= htmlspecialchars($rol['nombre'], ENT_QUOTES, 'UTF-8') ?>
-                                </option>
+                                <?php $idRol = (int) $rol['id_rol']; ?>
+
+                                <div class="form-check mb-2">
+                                    <input
+                                        type="checkbox"
+                                        name="id_roles[]"
+                                        id="rol_<?= $idRol ?>"
+                                        value="<?= $idRol ?>"
+                                        class="form-check-input"
+                                        <?= in_array($idRol, $rolesSeleccionados, true)
+                                            ? 'checked'
+                                            : '' ?>
+                                    >
+
+                                    <label
+                                        for="rol_<?= $idRol ?>"
+                                        class="form-check-label"
+                                    >
+                                        <?= htmlspecialchars($rol['nombre'], ENT_QUOTES, 'UTF-8') ?>
+                                    </label>
+                                </div>
                             <?php endforeach; ?>
-                        </select>
+                        </div>
+
+                        <small class="text-muted">
+                            Puede asignar uno o varios roles al usuario.
+                        </small>
                     </div>
 
                     <div class="mb-3">

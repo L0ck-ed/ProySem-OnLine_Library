@@ -84,11 +84,6 @@ class Usuario extends Model
                            usuario = :usuario,
                            estado = :estado,
                            fecha_actualizacion = CURRENT_TIMESTAMP";
-
-            /*
-             * La contraseña solamente se modifica cuando el usuario
-             * escribió una nueva.
-             */
             if (!empty($data['password_hash'])) {
                 $sqlUsuario .= ",
                            password_hash = :password_hash";
@@ -111,11 +106,6 @@ class Usuario extends Model
             }
 
             $stmtUsuario->execute($parametrosUsuario);
-
-            /*
-             * Por ahora el formulario administra un solo rol.
-             * Se elimina la asignación anterior y se coloca la nueva.
-             */
             $sqlEliminarRol = "DELETE FROM usuarios_roles
                            WHERE id_usuario = :id_usuario";
 
@@ -126,20 +116,22 @@ class Usuario extends Model
             ]);
 
             $sqlAsignarRol = "INSERT INTO usuarios_roles (
-                              id_usuario,
-                              id_rol
-                          )
-                          VALUES (
-                              :id_usuario,
-                              :id_rol
-                          )";
+                      id_usuario,
+                      id_rol
+                  )
+                  VALUES (
+                      :id_usuario,
+                      :id_rol
+                  )";
 
             $stmtAsignarRol = $this->db->prepare($sqlAsignarRol);
 
-            $stmtAsignarRol->execute([
-                ':id_usuario' => $data['id_usuario'],
-                ':id_rol' => $data['id_rol'],
-            ]);
+            foreach ($data['id_roles'] as $idRol) {
+                $stmtAsignarRol->execute([
+                    ':id_usuario' => $data['id_usuario'],
+                    ':id_rol' => (int) $idRol,
+                ]);
+            }
 
             $this->db->commit();
 
@@ -197,6 +189,8 @@ class Usuario extends Model
         try {
             $this->db->beginTransaction();
 
+            $esSqlServer = Sql::esSqlServer($this->db);
+
             $sqlUsuario = "INSERT INTO usuarios (
                             nombre,
                             usuario,
@@ -205,8 +199,13 @@ class Usuario extends Model
                             estado,
                             intentos_fallidos,
                             bloqueado
-                       )
-                       VALUES (
+                       )";
+
+            if ($esSqlServer) {
+                $sqlUsuario .= ' OUTPUT INSERTED.id_usuario';
+            }
+
+            $sqlUsuario .= " VALUES (
                             :nombre,
                             :usuario,
                             :password_hash,
@@ -225,7 +224,12 @@ class Usuario extends Model
                 ':correo' => $data['correo'] ?? null,
             ]);
 
-            $idUsuario = (int) $this->db->lastInsertId();
+            if ($esSqlServer) {
+                $idUsuario = (int) $stmtUsuario->fetchColumn();
+                $stmtUsuario->closeCursor();
+            } else {
+                $idUsuario = (int) $this->db->lastInsertId();
+            }
 
             if ($idUsuario <= 0) {
                 throw new \RuntimeException('No se pudo obtener el identificador del usuario.');
@@ -242,10 +246,12 @@ class Usuario extends Model
 
             $stmtRol = $this->db->prepare($sqlRol);
 
-            $stmtRol->execute([
-                ':id_usuario' => $idUsuario,
-                ':id_rol' => $data['id_rol'],
-            ]);
+            foreach ($data['id_roles'] as $idRol) {
+                $stmtRol->execute([
+                    ':id_usuario' => $idUsuario,
+                    ':id_rol' => (int) $idRol,
+                ]);
+            }
 
             $this->db->commit();
 
@@ -261,7 +267,6 @@ class Usuario extends Model
 
     public function listar(string $buscar = '', int $limit = 10, int $offset = 0): array
     {
-        // GROUP_CONCAT (MySQL) vs STRING_AGG (SQL Server) para unir los roles de un usuario en un solo texto
         $agregarRoles = Sql::esSqlServer($this->db)
             ? "STRING_AGG(r.nombre, ', ')"
             : "GROUP_CONCAT(r.nombre SEPARATOR ', ')";
@@ -343,5 +348,70 @@ class Usuario extends Model
         $stmt->execute();
 
         return $stmt->fetchAll();
+    }
+
+    public function obtenerNombresRolesUsuario(int $idUsuario): array
+    {
+        $sql = "SELECT
+                r.nombre
+            FROM usuarios_roles ur
+            INNER JOIN roles r
+                ON r.id_rol = ur.id_rol
+            WHERE ur.id_usuario = :id_usuario
+              AND r.estado = 1
+            ORDER BY r.nombre ASC";
+
+        $stmt = $this->db->prepare($sql);
+
+        $stmt->execute([
+            ':id_usuario' => $idUsuario,
+        ]);
+
+        return $stmt->fetchAll(\PDO::FETCH_COLUMN);
+    }
+
+    public function obtenerRolesUsuario(int $idUsuario): array
+    {
+        $sql = "SELECT
+                ur.id_rol
+            FROM usuarios_roles ur
+            INNER JOIN roles r
+                ON r.id_rol = ur.id_rol
+            WHERE ur.id_usuario = :id_usuario
+              AND r.estado = 1
+            ORDER BY r.nombre ASC";
+
+        $stmt = $this->db->prepare($sql);
+
+        $stmt->execute([
+            ':id_usuario' => $idUsuario,
+        ]);
+
+        return array_map('intval', $stmt->fetchAll(\PDO::FETCH_COLUMN));
+    }
+
+    public function obtenerPermisosUsuario(int $idUsuario): array
+    {
+        $sql = "SELECT DISTINCT
+                p.codigo
+            FROM usuarios_roles ur
+            INNER JOIN roles r
+                ON r.id_rol = ur.id_rol
+            INNER JOIN roles_permisos rp
+                ON rp.id_rol = r.id_rol
+            INNER JOIN permisos p
+                ON p.id_permiso = rp.id_permiso
+            WHERE ur.id_usuario = :id_usuario
+              AND r.estado = 1
+              AND p.estado = 1
+            ORDER BY p.codigo ASC";
+
+        $stmt = $this->db->prepare($sql);
+
+        $stmt->execute([
+            ':id_usuario' => $idUsuario,
+        ]);
+
+        return $stmt->fetchAll(\PDO::FETCH_COLUMN);
     }
 }

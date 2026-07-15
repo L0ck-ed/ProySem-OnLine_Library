@@ -15,6 +15,7 @@ class UsuarioController extends Controller
     public function index(): void
     {
         Auth::check();
+        Auth::exigirPermiso('usuarios.ver');
 
         $buscar = Sanitizer::text($_GET['buscar'] ?? '');
         $pagina = max(1, (int) ($_GET['pagina'] ?? 1));
@@ -50,6 +51,7 @@ class UsuarioController extends Controller
     public function editar(): void
     {
         Auth::check();
+        Auth::exigirPermiso('usuarios.editar');
 
         $idUsuario = filter_input(INPUT_GET, 'id', FILTER_VALIDATE_INT);
 
@@ -73,33 +75,48 @@ class UsuarioController extends Controller
 
         $roles = $usuarioModel->listarRolesActivos();
 
+        $rolesUsuario = $usuarioModel->obtenerRolesUsuario((int) $idUsuario);
+
         $this->view('Admin/User/editar', [
             'usuario' => $usuario,
             'roles' => $roles,
+            'rolesUsuario' => $rolesUsuario,
         ]);
     }
 
     public function guardar(): void
     {
         Auth::check();
+        Auth::exigirPermiso('usuarios.crear');
 
         $nombre = trim($_POST['nombre'] ?? '');
         $usuario = trim($_POST['usuario'] ?? '');
         $password = $_POST['password'] ?? '';
 
-        $idRol = filter_input(INPUT_POST, 'id_rol', FILTER_VALIDATE_INT);
+        $rolesRecibidos = $_POST['id_roles'] ?? [];
 
-        // Datos que se conservarán si ocurre un error.
-        // No guardamos la contraseña por seguridad.
+        $idRoles = array_values(
+            array_unique(
+                array_filter(
+                    array_map('intval', is_array($rolesRecibidos) ? $rolesRecibidos : []),
+                    fn(int $idRol): bool => $idRol > 0,
+                ),
+            ),
+        );
+
         $datosAnteriores = [
             'nombre' => $nombre,
             'usuario' => $usuario,
-            'id_rol' => $idRol ?: '',
+            'id_roles' => $idRoles,
         ];
 
-        if ($nombre === '' || $usuario === '' || $password === '' || !$idRol) {
+        if ($nombre === '' || $usuario === '' || $password === '' || empty($idRoles)) {
             Session::flash('old_usuario', $datosAnteriores);
-            Session::flash('error', 'Debe completar todos los campos.');
+
+            Session::flash(
+                'error',
+                'Debe completar todos los campos y seleccionar al menos un rol.',
+            );
 
             header('Location: ' . Config::url('usuarios/crear'));
             exit();
@@ -107,6 +124,7 @@ class UsuarioController extends Controller
 
         if (!Validator::min($password, 8)) {
             Session::flash('old_usuario', $datosAnteriores);
+
             Session::flash('error', 'La contraseña debe tener mínimo 8 caracteres.');
 
             header('Location: ' . Config::url('usuarios/crear'));
@@ -117,10 +135,27 @@ class UsuarioController extends Controller
 
         if ($usuarioModel->buscarPorUsuario($usuario)) {
             Session::flash('old_usuario', $datosAnteriores);
+
             Session::flash('error', 'El nombre de usuario ya existe.');
 
             header('Location: ' . Config::url('usuarios/crear'));
             exit();
+        }
+
+        // Verificar que todos los roles existan y estén activos.
+        $rolesActivos = $usuarioModel->listarRolesActivos();
+
+        $idsRolesActivos = array_map(fn(array $rol): int => (int) $rol['id_rol'], $rolesActivos);
+
+        foreach ($idRoles as $idRol) {
+            if (!in_array($idRol, $idsRolesActivos, true)) {
+                Session::flash('old_usuario', $datosAnteriores);
+
+                Session::flash('error', 'Uno de los roles seleccionados no es válido.');
+
+                header('Location: ' . Config::url('usuarios/crear'));
+                exit();
+            }
         }
 
         try {
@@ -129,7 +164,7 @@ class UsuarioController extends Controller
                 'usuario' => $usuario,
                 'password_hash' => password_hash($password, PASSWORD_DEFAULT),
                 'correo' => null,
-                'id_rol' => (int) $idRol,
+                'id_roles' => $idRoles,
             ]);
 
             Session::flash('success', 'Usuario creado correctamente.');
@@ -140,6 +175,7 @@ class UsuarioController extends Controller
             error_log('Error al crear usuario: ' . $e->getMessage());
 
             Session::flash('old_usuario', $datosAnteriores);
+
             Session::flash('error', 'No se pudo crear el usuario.');
 
             header('Location: ' . Config::url('usuarios/crear'));
@@ -150,34 +186,61 @@ class UsuarioController extends Controller
     public function actualizar(): void
     {
         Auth::check();
+        Auth::exigirPermiso('usuarios.editar');
 
         $idUsuario = filter_input(INPUT_POST, 'id_usuario', FILTER_VALIDATE_INT);
-
-        $idRol = filter_input(INPUT_POST, 'id_rol', FILTER_VALIDATE_INT);
-
         $nombre = trim($_POST['nombre'] ?? '');
         $usuario = trim($_POST['usuario'] ?? '');
         $password = $_POST['password'] ?? '';
         $estado = $_POST['estado'] ?? null;
 
+        $rolesRecibidos = $_POST['id_roles'] ?? [];
+
+        $idRoles = array_values(
+            array_unique(
+                array_filter(
+                    array_map('intval', is_array($rolesRecibidos) ? $rolesRecibidos : []),
+                    fn(int $idRol): bool => $idRol > 0,
+                ),
+            ),
+        );
+
         $datosAnteriores = [
             'nombre' => $nombre,
             'usuario' => $usuario,
-            'id_rol' => $idRol ?: '',
+            'id_roles' => $idRoles,
             'estado' => $estado,
         ];
 
+        $urlEditar = Config::url('usuarios/editar?id=' . (int) $idUsuario);
+
         if (
             !$idUsuario ||
-            !$idRol ||
             $nombre === '' ||
             $usuario === '' ||
+            empty($idRoles) ||
             !in_array($estado, ['0', '1'], true)
         ) {
             Session::flash('old_usuario', $datosAnteriores);
-            Session::flash('error', 'Debe completar correctamente todos los campos.');
+            Session::flash(
+                'error',
+                'Debe completar correctamente todos los campos y seleccionar al menos un rol.',
+            );
 
-            header('Location: ' . Config::url('usuarios/editar?id=' . (int) $idUsuario));
+            header('Location: ' . $urlEditar);
+            exit();
+        }
+
+        $idUsuarioSesion = (int) Session::get('id_usuario');
+
+        if ((int) $idUsuario === $idUsuarioSesion && $estado === '0') {
+            Session::flash('old_usuario', $datosAnteriores);
+            Session::flash(
+                'error',
+                'No puedes desactivar tu propia cuenta mientras tienes la sesión iniciada.',
+            );
+
+            header('Location: ' . $urlEditar);
             exit();
         }
 
@@ -185,7 +248,7 @@ class UsuarioController extends Controller
             Session::flash('old_usuario', $datosAnteriores);
             Session::flash('error', 'La nueva contraseña debe tener mínimo 8 caracteres.');
 
-            header('Location: ' . Config::url('usuarios/editar?id=' . (int) $idUsuario));
+            header('Location: ' . $urlEditar);
             exit();
         }
 
@@ -197,8 +260,26 @@ class UsuarioController extends Controller
             Session::flash('old_usuario', $datosAnteriores);
             Session::flash('error', 'El nombre de usuario ya pertenece a otra cuenta.');
 
-            header('Location: ' . Config::url('usuarios/editar?id=' . (int) $idUsuario));
+            header('Location: ' . $urlEditar);
             exit();
+        }
+
+        /*
+         * Verifica que todos los roles seleccionados
+         * existan y estén activos.
+         */
+        $rolesActivos = $usuarioModel->listarRolesActivos();
+
+        $idsRolesActivos = array_map(fn(array $rol): int => (int) $rol['id_rol'], $rolesActivos);
+
+        foreach ($idRoles as $idRol) {
+            if (!in_array($idRol, $idsRolesActivos, true)) {
+                Session::flash('old_usuario', $datosAnteriores);
+                Session::flash('error', 'Uno de los roles seleccionados no es válido.');
+
+                header('Location: ' . $urlEditar);
+                exit();
+            }
         }
 
         try {
@@ -207,7 +288,7 @@ class UsuarioController extends Controller
                 'nombre' => $nombre,
                 'usuario' => $usuario,
                 'estado' => (int) $estado,
-                'id_rol' => (int) $idRol,
+                'id_roles' => $idRoles,
                 'password_hash' =>
                     $password !== '' ? password_hash($password, PASSWORD_DEFAULT) : null,
             ]);
@@ -222,8 +303,68 @@ class UsuarioController extends Controller
             Session::flash('old_usuario', $datosAnteriores);
             Session::flash('error', 'No se pudo actualizar el usuario.');
 
-            header('Location: ' . Config::url('usuarios/editar?id=' . (int) $idUsuario));
+            header('Location: ' . $urlEditar);
             exit();
         }
+    }
+
+    public function cambiarEstado(): void
+    {
+        Auth::check();
+        Auth::exigirPermiso('usuarios.eliminar');
+
+        $idUsuario = filter_input(INPUT_POST, 'id_usuario', FILTER_VALIDATE_INT);
+
+        $estadoRecibido = $_POST['estado'] ?? null;
+
+        if (!$idUsuario || !in_array($estadoRecibido, ['0', '1'], true)) {
+            Session::flash('error', 'Los datos del usuario no son válidos.');
+
+            header('Location: ' . Config::url('usuarios'));
+            exit();
+        }
+
+        $idUsuarioSesion = (int) Session::get('id_usuario');
+
+        if ($idUsuario === $idUsuarioSesion && $estadoRecibido === '0') {
+            Session::flash(
+                'error',
+                'No puedes desactivar tu propia cuenta mientras tienes la sesión iniciada.',
+            );
+
+            header('Location: ' . Config::url('usuarios'));
+            exit();
+        }
+
+        $usuarioModel = new Usuario();
+
+        $usuario = $usuarioModel->buscarPorId((int) $idUsuario);
+
+        if (!$usuario) {
+            Session::flash('error', 'El usuario seleccionado no existe.');
+
+            header('Location: ' . Config::url('usuarios'));
+            exit();
+        }
+
+        try {
+            $nuevoEstado = (int) $estadoRecibido;
+
+            $usuarioModel->cambiarEstado((int) $idUsuario, $nuevoEstado);
+
+            Session::flash(
+                'success',
+                $nuevoEstado === 1
+                    ? 'Usuario activado correctamente.'
+                    : 'Usuario desactivado correctamente.',
+            );
+        } catch (\Throwable $e) {
+            error_log('Error al cambiar estado del usuario: ' . $e->getMessage());
+
+            Session::flash('error', 'No se pudo cambiar el estado del usuario.');
+        }
+
+        header('Location: ' . Config::url('usuarios'));
+        exit();
     }
 }

@@ -90,31 +90,43 @@ $old = Session::getFlash('old_usuario') ?? [];
                         </div>
                     </div>
 
-                    <div class="mb-3">
-                        <label for="id_rol" class="form-label">
-                            Rol
+                        <label class="form-label">
+                            Roles
                         </label>
 
-                        <select
-                            name="id_rol"
-                            id="id_rol"
-                            class="form-select"
-                            required
-                        >
-                            <option value="">
-                                Seleccione un rol
-                            </option>
+                        <div class="border rounded p-3">
                             <?php foreach ($roles as $rol): ?>
-                                <option
-                                    value="<?= (int) $rol['id_rol'] ?>"
-                                    <?= (int) ($old['id_rol'] ?? 0) === (int) $rol['id_rol']
-                                        ? 'selected'
-                                        : '' ?>
-                                >
-                                    <?= htmlspecialchars($rol['nombre'], ENT_QUOTES, 'UTF-8') ?>
-                                </option>
+                                <?php $idRol = (int) $rol['id_rol']; ?>
+
+                                <div class="form-check mb-2">
+                                    <input
+                                        type="checkbox"
+                                        name="id_roles[]"
+                                        id="rol_<?= $idRol ?>"
+                                        value="<?= $idRol ?>"
+                                        class="form-check-input"
+                                        <?= in_array(
+                                            $idRol,
+                                            array_map('intval', (array) ($old['id_roles'] ?? [])),
+                                            true,
+                                        )
+                                            ? 'checked'
+                                            : '' ?>
+                                    >
+
+                                    <label
+                                        for="rol_<?= $idRol ?>"
+                                        class="form-check-label"
+                                    >
+                                        <?= htmlspecialchars($rol['nombre'], ENT_QUOTES, 'UTF-8') ?>
+                                    </label>
+                                </div>
                             <?php endforeach; ?>
-                        </select>
+                        </div>
+
+                        <small class="text-muted">
+                            Seleccione al menos un rol para el usuario.
+                        </small>
                     </div>
 
                     <button type="submit" class="btn btn-success">
