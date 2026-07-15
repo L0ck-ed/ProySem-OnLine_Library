@@ -10,7 +10,6 @@ class Config
     public const PASSWORD = '';
     public const CHARSET = 'utf8mb4';
 
-    // Se dejan por compatibilidad, pero para rutas se usan los métodos de abajo.
     public const BASE_URL = '/ProySem-OnLine_Library';
     public const PUBLIC_URL = self::BASE_URL . '/Public';
     public const ASSETS_URL = self::PUBLIC_URL . '/Assets';

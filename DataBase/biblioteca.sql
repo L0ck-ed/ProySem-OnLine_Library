@@ -1,8 +1,3 @@
-/* ============================================================
-   BASE DE DATOS: BibliotecaDigitalDB
-   SQL Server
-   ADVERTENCIA: ESTE SCRIPT ELIMINA TODA LA BASE DE DATOS.
-   ============================================================ */
 
 USE master;
 GO
@@ -22,9 +17,6 @@ GO
 USE BibliotecaDigitalDB;
 GO
 
-/* ============================================================
-   SEGURIDAD, USUARIOS, ROLES Y PERMISOS
-   ============================================================ */
 
 CREATE TABLE roles (
     id_rol INT IDENTITY(1,1) PRIMARY KEY,
@@ -178,8 +170,6 @@ CREATE INDEX IX_logs_errores_fecha
 ON logs_errores(fecha);
 GO
 
-/* Tabla genérica para almacenar firmas digitales de registros.
-   La aplicación PHP deberá crear y verificar la firma mediante interfaces. */
 CREATE TABLE firmas_registros (
     id_firma BIGINT IDENTITY(1,1) PRIMARY KEY,
     tabla VARCHAR(128) NOT NULL,
@@ -201,9 +191,6 @@ CREATE INDEX IX_firmas_registros_tabla_id
 ON firmas_registros(tabla, id_registro);
 GO
 
-/* ============================================================
-   ESTUDIANTES, PROFESORES Y ADMINISTRATIVOS
-   ============================================================ */
 
 CREATE TABLE carreras (
     id_carrera INT IDENTITY(1,1) PRIMARY KEY,
@@ -303,9 +290,6 @@ CREATE TABLE administrativos (
 );
 GO
 
-/* ============================================================
-   LIBROS, CATEGORÍAS, TEMAS E IMÁGENES
-   ============================================================ */
 
 CREATE TABLE categorias (
     id_categoria INT IDENTITY(1,1) PRIMARY KEY,
@@ -420,9 +404,6 @@ CREATE TABLE libros_temas (
 );
 GO
 
-/* ============================================================
-   RESERVAS Y PRÉSTAMOS
-   ============================================================ */
 
 CREATE TABLE reservas (
     id_reserva BIGINT IDENTITY(1,1) PRIMARY KEY,
@@ -486,9 +467,6 @@ CREATE INDEX IX_reservas_libro
 ON reservas(id_libro);
 GO
 
-/* ============================================================
-   SOLICITUDES DE LIBROS NO DISPONIBLES
-   ============================================================ */
 
 CREATE TABLE solicitudes_libros (
     id_solicitud BIGINT IDENTITY(1,1) PRIMARY KEY,
@@ -534,9 +512,6 @@ CREATE INDEX IX_solicitudes_fecha
 ON solicitudes_libros(fecha_solicitud);
 GO
 
-/* ============================================================
-   PRÉSTAMO INTERBIBLIOTECARIO
-   ============================================================ */
 
 CREATE TABLE instituciones (
     id_institucion INT IDENTITY(1,1) PRIMARY KEY,

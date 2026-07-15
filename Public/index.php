@@ -6,7 +6,6 @@ ini_set('display_errors', '1');
 ini_set('display_startup_errors', '1');
 error_reporting(E_ALL);
 
-/* Autoload de Composer */
 $composerAutoload = __DIR__ . '/../vendor/autoload.php';
 
 if (file_exists($composerAutoload)) {
@@ -80,10 +79,6 @@ spl_autoload_register(function (string $class): void {
     }
 });
 
-/* ==================================================
-   IMPORTACIÓN DE CLASES
-   ================================================== */
-
 use App\Core\Router;
 
 use App\Controllers\AccesoController;
@@ -102,36 +97,16 @@ use App\Controllers\Admin\ReservaController;
 use App\Controllers\Admin\RolController;
 use App\Controllers\Admin\SolicitudController;
 
-/* ==================================================
-   INICIALIZACIÓN DEL ROUTER
-   ================================================== */
-
 $router = new Router();
-
-/* ==================================================
-   PÁGINA INICIAL Y PÁGINA PÚBLICA
-   ================================================== */
 
 $router->get('/', [AccesoController::class, 'index']);
 $router->get('/publico', [PublicoController::class, 'index']);
-
-/* ==================================================
-   AUTENTICACIÓN ADMINISTRATIVA
-   ================================================== */
 
 $router->get('/admin/login', [LoginController::class, 'index']);
 $router->post('/login', [LoginController::class, 'autenticar']);
 $router->get('/logout', [LoginController::class, 'logout']);
 
-/* ==================================================
-   DASHBOARD ADMINISTRATIVO
-   ================================================== */
-
 $router->get('/dashboard', [DashboardController::class, 'index']);
-
-/* ==================================================
-   USUARIOS
-   ================================================== */
 
 $router->get('/usuarios', [UsuarioController::class, 'index']);
 $router->get('/usuarios/crear', [UsuarioController::class, 'crear']);
@@ -139,10 +114,6 @@ $router->post('/usuarios/guardar', [UsuarioController::class, 'guardar']);
 $router->get('/usuarios/editar', [UsuarioController::class, 'editar']);
 $router->post('/usuarios/actualizar', [UsuarioController::class, 'actualizar']);
 $router->post('/usuarios/cambiar-estado', [UsuarioController::class, 'cambiarEstado']);
-
-/* ==================================================
-   ROLES Y PERMISOS
-   ================================================== */
 
 $router->get('/roles', [RolController::class, 'index']);
 $router->get('/roles/crear', [RolController::class, 'crear']);
@@ -152,10 +123,6 @@ $router->post('/roles/actualizar', [RolController::class, 'actualizar']);
 $router->post('/roles/cambiar-estado', [RolController::class, 'cambiarEstado']);
 $router->get('/roles/permisos', [RolController::class, 'permisos']);
 $router->post('/roles/permisos/guardar', [RolController::class, 'guardarPermisos']);
-
-/* ==================================================
-   ESTUDIANTES
-   ================================================== */
 
 $router->get('/estudiantes', [EstudianteController::class, 'index']);
 $router->get('/estudiantes/crear', [EstudianteController::class, 'crear']);
@@ -168,10 +135,6 @@ $router->get(
     [EstudianteController::class, 'carrerasPorFacultad'],
 );
 
-/* ==================================================
-   PROFESORES
-   ================================================== */
-
 $router->get('/profesores', [ProfesorController::class, 'index']);
 $router->get('/profesores/crear', [ProfesorController::class, 'crear']);
 $router->post('/profesores/guardar', [ProfesorController::class, 'guardar']);
@@ -183,10 +146,6 @@ $router->get(
     [ProfesorController::class, 'departamentosPorFacultad'],
 );
 
-/* ==================================================
-   CATEGORÍAS
-   ================================================== */
-
 $router->get('/categorias', [CategoriaController::class, 'index']);
 $router->get('/categorias/crear', [CategoriaController::class, 'crear']);
 $router->post('/categorias/guardar', [CategoriaController::class, 'guardar']);
@@ -194,9 +153,6 @@ $router->get('/categorias/editar', [CategoriaController::class, 'editar']);
 $router->post('/categorias/actualizar', [CategoriaController::class, 'actualizar']);
 $router->post('/categorias/cambiar-estado', [CategoriaController::class, 'cambiarEstado']);
 
-/* ==================================================
-   LIBROS
-   ================================================== */
 
 $router->get('/libros', [LibroController::class, 'index']);
 $router->get('/libros/crear', [LibroController::class, 'crear']);
@@ -204,10 +160,6 @@ $router->post('/libros/guardar', [LibroController::class, 'guardar']);
 $router->get('/libros/editar', [LibroController::class, 'editar']);
 $router->post('/libros/actualizar', [LibroController::class, 'actualizar']);
 $router->post('/libros/cambiar-estado', [LibroController::class, 'cambiarEstado']);
-
-/* ==================================================
-   RESERVAS Y PRÉSTAMOS
-   ================================================== */
 
 $router->get('/reservas', [ReservaController::class, 'index']);
 $router->post('/reservas/aprobar', [ReservaController::class, 'aprobar']);
@@ -217,25 +169,13 @@ $router->post('/reservas/cancelar', [ReservaController::class, 'cancelar']);
 $router->get('/reservas/reporte', [ReservaController::class, 'reporte']);
 $router->get('/reservas/reporte/excel', [ReservaController::class, 'exportarExcel']);
 
-/* ==================================================
-   SOLICITUDES ADMINISTRATIVAS
-   ================================================== */
-
 $router->get('/solicitudes', [SolicitudController::class, 'index']);
 $router->get('/solicitudes/gestionar', [SolicitudController::class, 'gestionar']);
 $router->post('/solicitudes/actualizar', [SolicitudController::class, 'actualizar']);
 
-/* ==================================================
-   AUTENTICACIÓN DE USUARIOS REGULARES
-   ================================================== */
-
 $router->get('/portal/login', [UsuarioRegularAuthController::class, 'index']);
 $router->post('/portal/login', [UsuarioRegularAuthController::class, 'autenticar']);
 $router->get('/portal/logout', [UsuarioRegularAuthController::class, 'logout']);
-
-/* ==================================================
-   PORTAL REGULAR
-   ================================================== */
 
 $router->get('/portal/inicio', [PortalController::class, 'inicio']);
 $router->get('/portal/catalogo', [PortalController::class, 'catalogo']);
@@ -246,10 +186,6 @@ $router->post('/portal/prestamos/devolver', [PortalController::class, 'devolver'
 $router->get('/portal/solicitudes', [PortalController::class, 'solicitudes']);
 $router->post('/portal/solicitudes', [PortalController::class, 'guardarSolicitud']);
 $router->get('/portal/perfil', [PortalController::class, 'perfil']);
-
-/* ==================================================
-   EJECUCIÓN DEL ROUTER
-   ================================================== */
 
 $router->dispatch(
     $_SERVER['REQUEST_URI'],

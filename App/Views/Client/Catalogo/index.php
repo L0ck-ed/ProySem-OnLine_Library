@@ -1,15 +1,4 @@
 <?php
-// Los datos llegan desde el controlador a través de $data
-// Variables disponibles:
-//   $libros               - array con los libros (ya filtrados)
-//   $categorias           - array con todas las categorías (para el select)
-//   $busqueda             - string con el término de búsqueda (para mantenerlo en el input)
-//   $categoriaSeleccionada - string con la categoría seleccionada (para el select)
-//   $paginaActual         - int (número de página actual)
-//   $totalPaginas         - int (total de páginas)
-//   $nombreEstudiante     - string (para el navbar)
-//   $cipSesion            - string (para el navbar)
-//   $carreraSesion        - string (para el navbar)
 
 require_once __DIR__ . '/../../Partials/header.php';
 require_once __DIR__ . '/../Partials/navbar.php';

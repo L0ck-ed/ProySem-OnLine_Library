@@ -1,7 +1,4 @@
 <?php
-// Los datos llegan desde el controlador a través de $data
-// Variables disponibles: $nombreEstudiante, $cipSesion, $carreraSesion,
-// $stats, $categoriasDestacadas, $librosRecientes, $topLibrosPorPeriodo
 
 require_once __DIR__ . '/../../Partials/header.php';
 require_once __DIR__ . '/../Partials/navbar.php';

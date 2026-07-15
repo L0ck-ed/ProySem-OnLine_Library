@@ -133,9 +133,6 @@ class Solicitud extends Model
         return (int) ($resultado['total'] ?? 0);
     }
 
-    /* ==================================================
-       ADMINISTRACIÓN
-       ================================================== */
 
     public function listarAdmin(array $filtros, int $limit = 10, int $offset = 0): array
     {
