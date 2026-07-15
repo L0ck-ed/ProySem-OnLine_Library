@@ -1,0 +1,19 @@
+FUNCIÓN DE 3 INTENTOS CORREGIDA
+================================
+
+1. Login administrativo
+   - Muestra intento 1 de 3 e intento 2 de 3.
+   - Al tercer error bloquea la cuenta.
+   - Un inicio correcto reinicia el contador a cero.
+   - El bloqueo administrativo debe retirarse desde la gestión de usuarios o la base de datos.
+
+2. Login regular (estudiantes y profesores)
+   - Antes bloqueaba al quinto intento; ahora bloquea exactamente al tercero.
+   - Muestra cuántos intentos quedan.
+   - El bloqueo dura 15 minutos.
+   - Después de los 15 minutos, se desbloquea automáticamente al volver a intentar.
+   - Un inicio correcto reinicia el contador a cero.
+
+3. Reinicio para pruebas
+   - Se agregó DataBase/desbloquear_usuarios_prueba.sql.
+   - Úsalo para dejar todas las cuentas desbloqueadas y con cero intentos.

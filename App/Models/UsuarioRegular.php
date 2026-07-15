@@ -231,27 +231,86 @@ class UsuarioRegular extends Model
         return $this->normalizarPerfil($usuario);
     }
 
-    public function registrarIntentoFallido(int $idUsuario): void
+    public function registrarIntentoFallido(int $idUsuario): int
     {
-        $sql = "UPDATE usuarios
-                SET
-                    intentos_fallidos = COALESCE(intentos_fallidos, 0) + 1,
-                    ultimo_intento = CURRENT_TIMESTAMP,
-                    bloqueado = CASE
-                        WHEN COALESCE(intentos_fallidos, 0) + 1 >= 5 THEN 1
-                        ELSE bloqueado
-                    END,
-                    bloqueado_hasta = CASE
-                        WHEN COALESCE(intentos_fallidos, 0) + 1 >= 5
-                            THEN DATEADD(MINUTE, 15, CURRENT_TIMESTAMP)
-                        ELSE bloqueado_hasta
-                    END
-                WHERE id_usuario = :id_usuario";
+        if (Sql::esSqlServer($this->db)) {
+            $sql = "UPDATE usuarios
+                    SET
+                        intentos_fallidos = COALESCE(intentos_fallidos, 0) + 1,
+                        ultimo_intento = CURRENT_TIMESTAMP
+                    OUTPUT INSERTED.intentos_fallidos
+                    WHERE id_usuario = :id_usuario";
 
-        $stmt = $this->db->prepare($sql);
-        $stmt->execute([
-            ':id_usuario' => $idUsuario,
-        ]);
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([
+                ':id_usuario' => $idUsuario,
+            ]);
+
+            $intentos = (int) $stmt->fetchColumn();
+            $stmt->closeCursor();
+
+            if ($intentos >= 3) {
+                $bloquear = $this->db->prepare(
+                    "UPDATE usuarios
+                     SET
+                         bloqueado = 1,
+                         bloqueado_hasta = DATEADD(MINUTE, 15, CURRENT_TIMESTAMP)
+                     WHERE id_usuario = :id_usuario",
+                );
+                $bloquear->execute([
+                    ':id_usuario' => $idUsuario,
+                ]);
+            }
+
+            return $intentos;
+        }
+
+        $this->db->beginTransaction();
+
+        try {
+            $sql = "UPDATE usuarios
+                    SET
+                        intentos_fallidos = COALESCE(intentos_fallidos, 0) + 1,
+                        ultimo_intento = CURRENT_TIMESTAMP
+                    WHERE id_usuario = :id_usuario";
+
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([
+                ':id_usuario' => $idUsuario,
+            ]);
+
+            $consulta = $this->db->prepare(
+                'SELECT intentos_fallidos FROM usuarios WHERE id_usuario = :id_usuario',
+            );
+            $consulta->execute([
+                ':id_usuario' => $idUsuario,
+            ]);
+
+            $intentos = (int) $consulta->fetchColumn();
+
+            if ($intentos >= 3) {
+                $bloquear = $this->db->prepare(
+                    "UPDATE usuarios
+                     SET
+                         bloqueado = 1,
+                         bloqueado_hasta = DATE_ADD(CURRENT_TIMESTAMP, INTERVAL 15 MINUTE)
+                     WHERE id_usuario = :id_usuario",
+                );
+                $bloquear->execute([
+                    ':id_usuario' => $idUsuario,
+                ]);
+            }
+
+            $this->db->commit();
+
+            return $intentos;
+        } catch (\Throwable $e) {
+            if ($this->db->inTransaction()) {
+                $this->db->rollBack();
+            }
+
+            throw $e;
+        }
     }
 
     public function actualizarLogin(int $idUsuario): void

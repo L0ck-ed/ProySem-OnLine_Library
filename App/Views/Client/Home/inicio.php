@@ -473,26 +473,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
                                 return `${titulo}: ${cantidad} uso(s)`;
                             },
-                            tooltip: {
-                                enabled: false, // Se desactiva el tooltip nativo (se recorta dentro del canvas)
-                                position: 'nearest',
-                                external: externalTooltipHandler, // Tooltip en HTML, no se corta
-                                callbacks: {
-                                    title: function() {
-                                        return ''; // Se oculta: el nombre ya va en el label de abajo
-                                    },
-                                    label: function(context) {
-                                        // Muestra el nombre completo sin truncar
-                                        return context.label + ': ' + context.parsed + ' préstamo(s)';
-                                    }
-                                }
-                            }
-                        }
-                    }
-                });
-            }
-        <?php endif; ?>
-    <?php endforeach; ?>
+                        },
+                    },
+                },
+            },
+        });
+    });
 });
 </script>
 

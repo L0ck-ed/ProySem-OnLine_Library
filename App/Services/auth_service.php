@@ -10,6 +10,8 @@ use App\Models\Usuario;
 
 class AuthService
 {
+    private const MAX_INTENTOS = 3;
+
     private Usuario $usuarioModel;
 
     public function __construct()
@@ -26,10 +28,7 @@ class AuthService
 
         Session::flash('old_usuario', $usuario);
 
-        if (
-            !Validator::required($usuario) ||
-            !Validator::required($password)
-        ) {
+        if (!Validator::required($usuario) || !Validator::required($password)) {
             Logger::login(
                 $usuario,
                 'campos_vacios',
@@ -37,18 +36,11 @@ class AuthService
                 'No se completaron todos los campos.',
             );
 
-            Session::flash(
-                'error',
-                'Debe completar todos los campos.',
-            );
-
+            Session::flash('error', 'Debe completar todos los campos.');
             $this->redirigirLogin();
         }
 
-        if (
-            mb_strlen($usuario) > 100 ||
-            mb_strlen($password) > 255
-        ) {
+        if (mb_strlen($usuario) > 100 || mb_strlen($password) > 255) {
             Logger::login(
                 $usuario,
                 'datos_invalidos',
@@ -56,17 +48,11 @@ class AuthService
                 'Los datos ingresados superan la longitud permitida.',
             );
 
-            Session::flash(
-                'error',
-                'Los datos ingresados no son válidos.',
-            );
-
+            Session::flash('error', 'Los datos ingresados no son válidos.');
             $this->redirigirLogin();
         }
 
-        $datos = $this->usuarioModel->buscarPorUsuario(
-            $usuario,
-        );
+        $datos = $this->usuarioModel->buscarPorUsuario($usuario);
 
         if (!$datos) {
             Logger::login(
@@ -76,11 +62,7 @@ class AuthService
                 'El usuario ingresado no existe.',
             );
 
-            Session::flash(
-                'error',
-                'Usuario o contraseña incorrectos.',
-            );
-
+            Session::flash('error', 'Usuario o contraseña incorrectos.');
             $this->redirigirLogin();
         }
 
@@ -94,15 +76,11 @@ class AuthService
                 'La cuenta se encuentra inactiva.',
             );
 
-            Session::flash(
-                'error',
-                'Esta cuenta se encuentra inactiva.',
-            );
-
+            Session::flash('error', 'Esta cuenta se encuentra inactiva.');
             $this->redirigirLogin();
         }
 
-        if ((int) $datos['bloqueado'] === 1) {
+        if ((int) ($datos['bloqueado'] ?? 0) === 1) {
             Logger::login(
                 $usuario,
                 'usuario_bloqueado',
@@ -112,24 +90,14 @@ class AuthService
 
             Session::flash(
                 'error',
-                'Este usuario está bloqueado por intentos fallidos.',
+                'Este usuario está bloqueado por 3 intentos fallidos. Debe ser desbloqueado por un administrador.',
             );
 
             $this->redirigirLogin();
         }
 
-        if (
-            !password_verify(
-                $password,
-                (string) $datos['password'],
-            )
-        ) {
-            $this->usuarioModel->aumentarIntentos(
-                $idUsuario,
-            );
-
-            $intentos =
-                (int) $datos['intentos_fallidos'] + 1;
+        if (!password_verify($password, (string) $datos['password'])) {
+            $intentos = $this->usuarioModel->aumentarIntentos($idUsuario);
 
             Logger::login(
                 $usuario,
@@ -138,10 +106,8 @@ class AuthService
                 "Intento fallido número {$intentos}.",
             );
 
-            if ($intentos >= 3) {
-                $this->usuarioModel->bloquearUsuario(
-                    $idUsuario,
-                );
+            if ($intentos >= self::MAX_INTENTOS) {
+                $this->usuarioModel->bloquearUsuario($idUsuario);
 
                 Logger::login(
                     $usuario,
@@ -152,21 +118,24 @@ class AuthService
 
                 Session::flash(
                     'error',
-                    'Usuario bloqueado por 3 intentos fallidos.',
+                    'Usuario bloqueado por 3 intentos fallidos. Debe ser desbloqueado por un administrador.',
                 );
             } else {
+                $restantes = self::MAX_INTENTOS - $intentos;
+                $textoIntento = $restantes === 1 ? 'intento' : 'intentos';
+
                 Session::flash(
                     'error',
-                    "Usuario o contraseña incorrectos. Intento {$intentos} de 3.",
+                    "Usuario o contraseña incorrectos. Intento {$intentos} de "
+                    . self::MAX_INTENTOS
+                    . ". Te quedan {$restantes} {$textoIntento}.",
                 );
             }
 
             $this->redirigirLogin();
         }
 
-        $this->usuarioModel->actualizarLogin(
-            $idUsuario,
-        );
+        $this->usuarioModel->actualizarLogin($idUsuario);
 
         Logger::login(
             $usuario,
@@ -177,10 +146,7 @@ class AuthService
 
         session_regenerate_id(true);
 
-        $roles = $this->usuarioModel
-            ->obtenerNombresRolesUsuario(
-                $idUsuario,
-            );
+        $roles = $this->usuarioModel->obtenerNombresRolesUsuario($idUsuario);
 
         if (empty($roles)) {
             Logger::login(
@@ -190,18 +156,11 @@ class AuthService
                 'El usuario no tiene roles activos asignados.',
             );
 
-            Session::flash(
-                'error',
-                'La cuenta no tiene un rol activo asignado.',
-            );
-
+            Session::flash('error', 'La cuenta no tiene un rol activo asignado.');
             $this->redirigirLogin();
         }
 
-        $permisos = $this->usuarioModel
-            ->obtenerPermisosUsuario(
-                $idUsuario,
-            );
+        $permisos = $this->usuarioModel->obtenerPermisosUsuario($idUsuario);
 
         Session::set('id_usuario', $idUsuario);
         Session::set('usuario', $datos['usuario']);
@@ -212,11 +171,7 @@ class AuthService
 
         Session::getFlash('old_usuario');
 
-        header(
-            'Location: ' .
-            Config::url('dashboard'),
-        );
-
+        header('Location: ' . Config::url('dashboard'));
         exit();
     }
 
@@ -240,20 +195,13 @@ class AuthService
 
         session_regenerate_id(true);
 
-        header(
-            'Location: ' . Config::url(),
-        );
-
+        header('Location: ' . Config::url());
         exit();
     }
 
     private function redirigirLogin(): never
     {
-        header(
-            'Location: ' .
-            Config::url('admin/login'),
-        );
-
+        header('Location: ' . Config::url('admin/login'));
         exit();
     }
 }

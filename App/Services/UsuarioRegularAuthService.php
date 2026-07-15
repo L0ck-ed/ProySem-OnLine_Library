@@ -2,12 +2,15 @@
 
 namespace App\Services;
 
+use App\Helpers\Logger;
 use App\Helpers\Session;
 use App\Models\Usuario;
 use App\Models\UsuarioRegular;
 
 class UsuarioRegularAuthService
 {
+    private const MAX_INTENTOS = 3;
+
     /**
      * @return array{ok: bool, mensaje: string}
      */
@@ -17,6 +20,13 @@ class UsuarioRegularAuthService
         $usuario = $modeloRegular->buscarPorCredencial($credencial);
 
         if (!$usuario) {
+            Logger::login(
+                'portal:' . $credencial,
+                'usuario_no_existe',
+                null,
+                'No se encontró una cuenta regular activa con esa credencial.',
+            );
+
             return [
                 'ok' => false,
                 'mensaje' => 'Usuario, correo, CIP o contraseña incorrectos.',
@@ -33,31 +43,81 @@ class UsuarioRegularAuthService
                 $ahora = new \DateTimeImmutable();
 
                 if ($fechaBloqueo > $ahora) {
+                    Logger::login(
+                        'portal:' . $credencial,
+                        'usuario_bloqueado',
+                        $idUsuario,
+                        'La cuenta regular continúa dentro del periodo de bloqueo.',
+                    );
+
                     return [
                         'ok' => false,
-                        'mensaje' => 'La cuenta está bloqueada temporalmente. Intenta nuevamente más tarde.',
+                        'mensaje' => 'Cuenta bloqueada por 3 intentos fallidos. Intenta nuevamente después de 15 minutos.',
                     ];
                 }
 
                 $modeloRegular->desbloquear($idUsuario);
+                $usuario['intentos_fallidos'] = 0;
+                $usuario['bloqueado'] = 0;
+                $usuario['bloqueado_hasta'] = null;
             } else {
+                Logger::login(
+                    'portal:' . $credencial,
+                    'usuario_bloqueado',
+                    $idUsuario,
+                    'La cuenta regular está bloqueada sin fecha de desbloqueo.',
+                );
+
                 return [
                     'ok' => false,
-                    'mensaje' => 'La cuenta se encuentra bloqueada.',
+                    'mensaje' => 'La cuenta se encuentra bloqueada. Contacta al administrador.',
                 ];
             }
         }
 
         if (!password_verify($clave, (string) $usuario['password_hash'])) {
-            $modeloRegular->registrarIntentoFallido($idUsuario);
+            $intentos = $modeloRegular->registrarIntentoFallido($idUsuario);
+
+            Logger::login(
+                'portal:' . $credencial,
+                'password_incorrecta',
+                $idUsuario,
+                "Intento fallido número {$intentos}.",
+            );
+
+            if ($intentos >= self::MAX_INTENTOS) {
+                Logger::login(
+                    'portal:' . $credencial,
+                    'bloqueado_por_intentos',
+                    $idUsuario,
+                    'La cuenta regular fue bloqueada temporalmente después de tres intentos.',
+                );
+
+                return [
+                    'ok' => false,
+                    'mensaje' => 'Cuenta bloqueada por 3 intentos fallidos. Podrás intentarlo nuevamente en 15 minutos.',
+                ];
+            }
+
+            $restantes = self::MAX_INTENTOS - $intentos;
+            $textoIntento = $restantes === 1 ? 'intento' : 'intentos';
 
             return [
                 'ok' => false,
-                'mensaje' => 'Usuario, correo, CIP o contraseña incorrectos.',
+                'mensaje' => "Credenciales incorrectas. Intento {$intentos} de "
+                    . self::MAX_INTENTOS
+                    . ". Te quedan {$restantes} {$textoIntento}.",
             ];
         }
 
         $modeloRegular->actualizarLogin($idUsuario);
+
+        Logger::login(
+            'portal:' . $credencial,
+            'correcto',
+            $idUsuario,
+            'Inicio de sesión regular exitoso.',
+        );
 
         $usuarioModel = new Usuario();
         $permisos = $usuarioModel->obtenerPermisosUsuario($idUsuario);

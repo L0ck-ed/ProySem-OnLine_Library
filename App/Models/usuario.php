@@ -150,7 +150,9 @@ class Usuario extends Model
         $sql = "UPDATE usuarios
                 SET ultimo_login = CURRENT_TIMESTAMP,
                     ultimo_intento = CURRENT_TIMESTAMP,
-                    intentos_fallidos = 0
+                    intentos_fallidos = 0,
+                    bloqueado = 0,
+                    bloqueado_hasta = NULL
                 WHERE id_usuario = :id";
 
         $stmt = $this->db->prepare($sql);
@@ -159,17 +161,57 @@ class Usuario extends Model
         ]);
     }
 
-    public function aumentarIntentos(int $idUsuario): void
+    public function aumentarIntentos(int $idUsuario): int
     {
-        $sql = "UPDATE usuarios
-                SET intentos_fallidos = intentos_fallidos + 1,
-                    ultimo_intento = CURRENT_TIMESTAMP
-                WHERE id_usuario = :id";
+        if (Sql::esSqlServer($this->db)) {
+            $sql = "UPDATE usuarios
+                    SET intentos_fallidos = COALESCE(intentos_fallidos, 0) + 1,
+                        ultimo_intento = CURRENT_TIMESTAMP
+                    OUTPUT INSERTED.intentos_fallidos
+                    WHERE id_usuario = :id";
 
-        $stmt = $this->db->prepare($sql);
-        $stmt->execute([
-            ':id' => $idUsuario,
-        ]);
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([
+                ':id' => $idUsuario,
+            ]);
+
+            $intentos = (int) $stmt->fetchColumn();
+            $stmt->closeCursor();
+
+            return $intentos;
+        }
+
+        $this->db->beginTransaction();
+
+        try {
+            $sql = "UPDATE usuarios
+                    SET intentos_fallidos = COALESCE(intentos_fallidos, 0) + 1,
+                        ultimo_intento = CURRENT_TIMESTAMP
+                    WHERE id_usuario = :id";
+
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([
+                ':id' => $idUsuario,
+            ]);
+
+            $consulta = $this->db->prepare(
+                'SELECT intentos_fallidos FROM usuarios WHERE id_usuario = :id',
+            );
+            $consulta->execute([
+                ':id' => $idUsuario,
+            ]);
+
+            $intentos = (int) $consulta->fetchColumn();
+            $this->db->commit();
+
+            return $intentos;
+        } catch (\Throwable $e) {
+            if ($this->db->inTransaction()) {
+                $this->db->rollBack();
+            }
+
+            throw $e;
+        }
     }
 
     public function bloquearUsuario(int $idUsuario): void
