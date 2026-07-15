@@ -1,8 +1,9 @@
 <?php
 /* El botón "Reservar" envía un POST a /portal/reservar (PortalController::reservar). */
 
-$nombreEstudiante = $nombreEstudiante ?? 'Anthony Castillo';
-$cipSesion = $cipSesion ?? '8-1023-2265';
+
+$nombreEstudiante = $nombreEstudiante ?? 'Estudiante';
+$cipSesion = $cipSesion ?? '';
 
 if (!isset($libro) || $libro === false) {
     require_once __DIR__ . '/../../Partials/header.php';
