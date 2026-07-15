@@ -29,12 +29,12 @@ class Session
         return isset($_SESSION[$key]);
     }
 
-    public static function flash(string $key, string $message): void
+    public static function flash(string $key, mixed $value): void
     {
-        self::set($key, $message);
+        self::set($key, $value);
     }
 
-    public static function getFlash(string $key): ?string
+    public static function getFlash(string $key): mixed
     {
         self::start();
 
@@ -42,10 +42,10 @@ class Session
             return null;
         }
 
-        $message = $_SESSION[$key];
+        $value = $_SESSION[$key];
         unset($_SESSION[$key]);
 
-        return $message;
+        return $value;
     }
 
     public static function destroy(): void
@@ -64,7 +64,7 @@ class Session
                 $params['path'],
                 $params['domain'],
                 $params['secure'],
-                $params['httponly']
+                $params['httponly'],
             );
         }
 

@@ -8,6 +8,11 @@ require_once __DIR__ . '/../Partials/navbar.php';
 
 $error = Session::getFlash('error');
 $old = Session::getFlash('old_usuario') ?? [];
+
+$nombreActual = $old['nombre'] ?? $usuario['nombre'];
+$usuarioActual = $old['usuario'] ?? $usuario['usuario'];
+$idRolActual = (int) ($old['id_rol'] ?? $usuario['id_rol']);
+$estadoActual = (int) ($old['estado'] ?? $usuario['estado']);
 ?>
 
 <div class="container-fluid">
@@ -17,7 +22,7 @@ $old = Session::getFlash('old_usuario') ?? [];
         </div>
 
         <div class="col-md-10 p-4">
-            <h2>Nuevo Usuario</h2>
+            <h2>Editar Usuario</h2>
 
             <?php if ($error): ?>
                 <div class="alert alert-danger mt-3">
@@ -28,22 +33,25 @@ $old = Session::getFlash('old_usuario') ?? [];
             <div class="card p-4 mt-3">
                 <form
                     method="POST"
-                    action="<?= Config::baseUrl() ?>/usuarios/guardar"
+                    action="<?= Config::baseUrl() ?>/usuarios/actualizar"
                 >
+                    <input
+                        type="hidden"
+                        name="id_usuario"
+                        value="<?= (int) $usuario['id_usuario'] ?>"
+                    >
+
                     <div class="mb-3">
                         <label for="nombre" class="form-label">
                             Nombre completo
                         </label>
+
                         <input
                             type="text"
                             name="nombre"
                             id="nombre"
                             class="form-control"
-                            value="<?= htmlspecialchars(
-                                $old['nombre'] ?? '',
-                                ENT_QUOTES,
-                                'UTF-8',
-                            ) ?>"
+                            value="<?= htmlspecialchars($nombreActual, ENT_QUOTES, 'UTF-8') ?>"
                             required
                         >
                     </div>
@@ -52,23 +60,20 @@ $old = Session::getFlash('old_usuario') ?? [];
                         <label for="usuario" class="form-label">
                             Nombre de usuario
                         </label>
+
                         <input
                             type="text"
                             name="usuario"
                             id="usuario"
                             class="form-control"
-                            value="<?= htmlspecialchars(
-                                $old['usuario'] ?? '',
-                                ENT_QUOTES,
-                                'UTF-8',
-                            ) ?>"
+                            value="<?= htmlspecialchars($usuarioActual, ENT_QUOTES, 'UTF-8') ?>"
                             required
                         >
                     </div>
 
                     <div class="mb-3">
                         <label for="password" class="form-label">
-                            Contraseña
+                            Nueva contraseña
                         </label>
 
                         <div class="input-group">
@@ -77,7 +82,8 @@ $old = Session::getFlash('old_usuario') ?? [];
                                 name="password"
                                 id="password"
                                 class="form-control"
-                                required
+                                minlength="8"
+                                placeholder="Déjela vacía para conservar la actual"
                             >
 
                             <button
@@ -88,6 +94,10 @@ $old = Session::getFlash('old_usuario') ?? [];
                                 Ver
                             </button>
                         </div>
+
+                        <small class="text-muted">
+                            Solo complete este campo para cambiar la contraseña.
+                        </small>
                     </div>
 
                     <div class="mb-3">
@@ -104,12 +114,11 @@ $old = Session::getFlash('old_usuario') ?? [];
                             <option value="">
                                 Seleccione un rol
                             </option>
+
                             <?php foreach ($roles as $rol): ?>
                                 <option
                                     value="<?= (int) $rol['id_rol'] ?>"
-                                    <?= (int) ($old['id_rol'] ?? 0) === (int) $rol['id_rol']
-                                        ? 'selected'
-                                        : '' ?>
+                                    <?= $idRolActual === (int) $rol['id_rol'] ? 'selected' : '' ?>
                                 >
                                     <?= htmlspecialchars($rol['nombre'], ENT_QUOTES, 'UTF-8') ?>
                                 </option>
@@ -117,9 +126,36 @@ $old = Session::getFlash('old_usuario') ?? [];
                         </select>
                     </div>
 
+                    <div class="mb-3">
+                        <label for="estado" class="form-label">
+                            Estado
+                        </label>
+
+                        <select
+                            name="estado"
+                            id="estado"
+                            class="form-select"
+                            required
+                        >
+                            <option
+                                value="1"
+                                <?= $estadoActual === 1 ? 'selected' : '' ?>
+                            >
+                                Activo
+                            </option>
+
+                            <option
+                                value="0"
+                                <?= $estadoActual === 0 ? 'selected' : '' ?>
+                            >
+                                Inactivo
+                            </option>
+                        </select>
+                    </div>
+
                     <button type="submit" class="btn btn-success">
                         <i class="fa-solid fa-save"></i>
-                        Guardar
+                        Actualizar
                     </button>
 
                     <a
@@ -134,6 +170,6 @@ $old = Session::getFlash('old_usuario') ?? [];
     </div>
 </div>
 
-<script src="/ProySem-OnLine_Library/Public/Assets/JavaScript/Functions/toggle-password-visibility.js?v=10"></script>
+<script src="<?= Config::baseUrl() ?>/Public/Assets/JavaScript/Functions/toggle-password-visibility.js?v=10"></script>
 
 <?php require_once __DIR__ . '/../../Partials/footer.php'; ?>

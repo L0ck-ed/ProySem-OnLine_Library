@@ -8,7 +8,6 @@ require_once __DIR__ . '/../Partials/navbar.php';
 
 $success = Session::getFlash('success');
 $error = Session::getFlash('error');
-
 ?>
 
 <div class="container-fluid">
@@ -64,33 +63,59 @@ $error = Session::getFlash('error');
                                 <th>Rol</th>
                                 <th>Estado</th>
                                 <th>Fecha</th>
+                                <th>Acciones</th>
                             </tr>
                         </thead>
 
-                        <tbody>
-                            <?php foreach ($usuarios as $u): ?>
-                                <tr>
-                                    <td><?= $u['id_usuario'] ?></td>
-                                    <td><?= $u['nombre'] ?></td>
-                                    <td><?= $u['usuario'] ?></td>
-                                    <td><?= $u['rol'] ?></td>
-                                    <td>
-                                        <span class="badge bg-success">
-                                            <?= $u['estado'] ?>
-                                        </span>
-                                    </td>
-                                    <td><?= $u['fecha_creacion'] ?></td>
-                                </tr>
-                            <?php endforeach; ?>
+<tbody>
+    <?php foreach ($usuarios as $u): ?>
+        <tr>
+            <td><?= (int) $u['id_usuario'] ?></td>
 
-                            <?php if (empty($usuarios)): ?>
-                                <tr>
-                                    <td colspan="6" class="text-center">
-                                        No hay usuarios registrados.
-                                    </td>
-                                </tr>
-                            <?php endif; ?>
-                        </tbody>
+            <td>
+                <?= htmlspecialchars($u['nombre'], ENT_QUOTES, 'UTF-8') ?>
+            </td>
+
+            <td>
+                <?= htmlspecialchars($u['usuario'], ENT_QUOTES, 'UTF-8') ?>
+            </td>
+
+            <td>
+                <?= htmlspecialchars($u['rol'], ENT_QUOTES, 'UTF-8') ?>
+            </td>
+
+            <td>
+                <span
+                    class="badge <?= $u['estado'] === 'Activo' ? 'bg-success' : 'bg-secondary' ?>"
+                >
+                    <?= htmlspecialchars($u['estado'], ENT_QUOTES, 'UTF-8') ?>
+                </span>
+            </td>
+
+            <td>
+                <?= htmlspecialchars($u['fecha_creacion'], ENT_QUOTES, 'UTF-8') ?>
+            </td>
+
+            <td>
+                <a
+                    href="<?= Config::url('usuarios/editar?id=' . (int) $u['id_usuario']) ?>"
+                    class="btn btn-sm btn-warning"
+                >
+                    <i class="fa-solid fa-pen-to-square"></i>
+                    Editar
+                </a>
+            </td>
+        </tr>
+    <?php endforeach; ?>
+
+    <?php if (empty($usuarios)): ?>
+        <tr>
+            <td colspan="7" class="text-center">
+                No hay usuarios registrados.
+            </td>
+        </tr>
+    <?php endif; ?>
+</tbody>
                     </table>
                 </div>
 
@@ -99,7 +124,9 @@ $error = Session::getFlash('error');
                         <?php for ($i = 1; $i <= max(1, $paginas); $i++): ?>
                             <li class="page-item <?= $i == $pagina ? 'active' : '' ?>">
                                 <a class="page-link"
-                                   href="<?= Config::baseUrl() ?>/usuarios?buscar=<?= urlencode($buscar) ?>&pagina=<?= $i ?>">
+                                   href="<?= Config::baseUrl() ?>/usuarios?buscar=<?= urlencode(
+    $buscar,
+) ?>&pagina=<?= $i ?>">
                                     <?= $i ?>
                                 </a>
                             </li>

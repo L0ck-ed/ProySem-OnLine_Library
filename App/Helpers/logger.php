@@ -3,46 +3,94 @@
 namespace App\Helpers;
 
 use App\Configs\DatabaseConfig;
+use Throwable;
 
 class Logger
 {
-    public static function login(string $usuario, string $resultado): void
-    {
+    public static function login(
+        string $usuario,
+        string $resultado,
+        ?int $idUsuario = null,
+        ?string $detalle = null
+    ): void {
         try {
             $db = DatabaseConfig::connect();
 
-            $sql = "INSERT INTO logs_login
-                    (usuario, ip, navegador, metodo, url, resultado, fecha)
-                    VALUES
-                    (:usuario, :ip, :navegador, :metodo, :url, :resultado, CURRENT_TIMESTAMP)";
+            $sql = "INSERT INTO logs_login (
+                        id_usuario,
+                        usuario_intentado,
+                        ip,
+                        navegador,
+                        metodo,
+                        url,
+                        resultado,
+                        detalle
+                    )
+                    VALUES (
+                        :id_usuario,
+                        :usuario_intentado,
+                        :ip,
+                        :navegador,
+                        :metodo,
+                        :url,
+                        :resultado,
+                        :detalle
+                    )";
 
             $stmt = $db->prepare($sql);
 
             $stmt->execute([
-                ':usuario' => $usuario,
+                ':id_usuario' => $idUsuario,
+                ':usuario_intentado' => $usuario,
                 ':ip' => self::obtenerIp(),
-                ':navegador' => substr($_SERVER['HTTP_USER_AGENT'] ?? 'desconocido', 0, 500),
-                ':metodo' => $_SERVER['REQUEST_METHOD'] ?? 'desconocido',
-                ':url' => substr($_SERVER['REQUEST_URI'] ?? 'desconocida', 0, 255),
-                ':resultado' => $resultado
+                ':navegador' => substr(
+                    $_SERVER['HTTP_USER_AGENT'] ?? 'Desconocido',
+                    0,
+                    500
+                ),
+                ':metodo' => substr(
+                    $_SERVER['REQUEST_METHOD'] ?? 'Desconocido',
+                    0,
+                    10
+                ),
+                ':url' => substr(
+                    $_SERVER['REQUEST_URI'] ?? 'Desconocida',
+                    0,
+                    500
+                ),
+                ':resultado' => substr($resultado, 0, 30),
+                ':detalle' => $detalle
             ]);
-        } catch (\Throwable $e) {
-            error_log('Error en Logger::login: ' . $e->getMessage());
+
+        } catch (Throwable $e) {
+            error_log(
+                'Error en Logger::login: ' . $e->getMessage()
+            );
         }
     }
 
     private static function obtenerIp(): string
     {
-        foreach (['HTTP_X_FORWARDED_FOR', 'HTTP_CLIENT_IP', 'REMOTE_ADDR'] as $clave) {
-            if (!empty($_SERVER[$clave])) {
-                $ip = trim(explode(',', $_SERVER[$clave])[0]);
+        $claves = [
+            'HTTP_X_FORWARDED_FOR',
+            'HTTP_CLIENT_IP',
+            'REMOTE_ADDR'
+        ];
 
-                if (filter_var($ip, FILTER_VALIDATE_IP)) {
-                    return $ip;
-                }
+        foreach ($claves as $clave) {
+            if (empty($_SERVER[$clave])) {
+                continue;
+            }
+
+            $ip = trim(
+                explode(',', $_SERVER[$clave])[0]
+            );
+
+            if (filter_var($ip, FILTER_VALIDATE_IP)) {
+                return $ip;
             }
         }
 
-        return 'desconocida';
+        return 'Desconocida';
     }
 }

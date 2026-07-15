@@ -24,7 +24,7 @@ spl_autoload_register(function (string $class): void {
         }
 
         $iterator = new RecursiveIteratorIterator(
-            new RecursiveDirectoryIterator($basePath, FilesystemIterator::SKIP_DOTS)
+            new RecursiveDirectoryIterator($basePath, FilesystemIterator::SKIP_DOTS),
         );
 
         foreach ($iterator as $file) {
@@ -40,7 +40,11 @@ spl_autoload_register(function (string $class): void {
 
             if (
                 preg_match('/namespace\\s+([^;]+);/', $content, $namespaceMatch) &&
-                preg_match('/(?:class|interface|trait)\\s+([A-Za-z_][A-Za-z0-9_]*)/', $content, $classMatch)
+                preg_match(
+                    '/(?:class|interface|trait)\\s+([A-Za-z_][A-Za-z0-9_]*)/',
+                    $content,
+                    $classMatch,
+                )
             ) {
                 $classMap[$namespaceMatch[1] . '\\' . $classMatch[1]] = $file->getPathname();
             }
@@ -70,6 +74,8 @@ $router->get('/dashboard', [DashboardController::class, 'index']);
 $router->get('/usuarios', [UsuarioController::class, 'index']);
 $router->get('/usuarios/crear', [UsuarioController::class, 'crear']);
 $router->post('/usuarios/guardar', [UsuarioController::class, 'guardar']);
+$router->get('/usuarios/editar', [UsuarioController::class, 'editar']);
+$router->post('/usuarios/actualizar', [UsuarioController::class, 'actualizar']);
 
 // Portal del estudiante
 $router->get('/portal/login', [EstudianteAuthController::class, 'index']);
@@ -86,7 +92,4 @@ $router->get('/portal/perfil', [PortalController::class, 'perfil']);
 
 $router->post('/portal/prestamos/devolver', [PortalController::class, 'devolver']);
 
-$router->dispatch(
-    $_SERVER['REQUEST_URI'],
-    $_SERVER['REQUEST_METHOD']
-);
+$router->dispatch($_SERVER['REQUEST_URI'], $_SERVER['REQUEST_METHOD']);

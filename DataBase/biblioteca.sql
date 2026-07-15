@@ -1,282 +1,1174 @@
-/*CREATE DATABASE IF NOT EXISTS myprojectbiblioteca_v2
-CHARACTER SET utf8mb4
-COLLATE utf8mb4_general_ci;
+/* ============================================================
+   BASE DE DATOS: BibliotecaDigitalDB
+   SQL Server
+   ADVERTENCIA: ESTE SCRIPT ELIMINA TODA LA BASE DE DATOS.
+   ============================================================ */
 
-USE myprojectbiblioteca_v2;
+USE master;
+GO
 
-DROP TABLE IF EXISTS logs_login;
-DROP TABLE IF EXISTS solicitudes;
-DROP TABLE IF EXISTS reservas;
-DROP TABLE IF EXISTS libros;
-DROP TABLE IF EXISTS categorias;
-DROP TABLE IF EXISTS estudiantes;
-DROP TABLE IF EXISTS carreras;
-DROP TABLE IF EXISTS usuarios;
+IF DB_ID(N'BibliotecaDigitalDB') IS NOT NULL
+BEGIN
+    ALTER DATABASE BibliotecaDigitalDB
+    SET SINGLE_USER WITH ROLLBACK IMMEDIATE;
+
+    DROP DATABASE BibliotecaDigitalDB;
+END;
+GO
+
+CREATE DATABASE BibliotecaDigitalDB;
+GO
+
+USE BibliotecaDigitalDB;
+GO
+
+/* ============================================================
+   SEGURIDAD, USUARIOS, ROLES Y PERMISOS
+   ============================================================ */
+
+CREATE TABLE roles (
+    id_rol INT IDENTITY(1,1) PRIMARY KEY,
+    nombre VARCHAR(50) NOT NULL,
+    descripcion VARCHAR(255) NULL,
+    estado BIT NOT NULL
+        CONSTRAINT DF_roles_estado DEFAULT 1,
+    fecha_creacion DATETIME2(0) NOT NULL
+        CONSTRAINT DF_roles_fecha_creacion DEFAULT SYSDATETIME(),
+
+    CONSTRAINT UQ_roles_nombre UNIQUE (nombre)
+);
+GO
+
+CREATE TABLE permisos (
+    id_permiso INT IDENTITY(1,1) PRIMARY KEY,
+    codigo VARCHAR(100) NOT NULL,
+    modulo VARCHAR(50) NOT NULL,
+    accion VARCHAR(50) NOT NULL,
+    descripcion VARCHAR(255) NULL,
+    estado BIT NOT NULL
+        CONSTRAINT DF_permisos_estado DEFAULT 1,
+    fecha_creacion DATETIME2(0) NOT NULL
+        CONSTRAINT DF_permisos_fecha_creacion DEFAULT SYSDATETIME(),
+
+    CONSTRAINT UQ_permisos_codigo UNIQUE (codigo)
+);
+GO
 
 CREATE TABLE usuarios (
-    id_usuario INT AUTO_INCREMENT PRIMARY KEY,
-    nombre VARCHAR(100) NOT NULL,
-    usuario VARCHAR(50) NOT NULL UNIQUE,
-    password VARCHAR(255) NOT NULL,
-    rol ENUM('Administrador','Bibliotecario') NOT NULL DEFAULT 'Bibliotecario',
-    estado ENUM('Activo','Inactivo') NOT NULL DEFAULT 'Activo',
-    intentos_fallidos INT NOT NULL DEFAULT 0,
-    bloqueado TINYINT(1) NOT NULL DEFAULT 0,
-    ultimo_login DATETIME NULL,
-    ultimo_intento DATETIME NULL,
-    fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
+    id_usuario INT IDENTITY(1,1) PRIMARY KEY,
+    nombre VARCHAR(150) NOT NULL,
+    usuario VARCHAR(80) NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
+    correo VARCHAR(150) NULL,
+    estado BIT NOT NULL
+        CONSTRAINT DF_usuarios_estado DEFAULT 1,
+    intentos_fallidos INT NOT NULL
+        CONSTRAINT DF_usuarios_intentos DEFAULT 0,
+    bloqueado BIT NOT NULL
+        CONSTRAINT DF_usuarios_bloqueado DEFAULT 0,
+    bloqueado_hasta DATETIME2(0) NULL,
+    ultimo_login DATETIME2(0) NULL,
+    ultimo_intento DATETIME2(0) NULL,
+    debe_cambiar_password BIT NOT NULL
+        CONSTRAINT DF_usuarios_cambiar_password DEFAULT 0,
+    fecha_creacion DATETIME2(0) NOT NULL
+        CONSTRAINT DF_usuarios_fecha_creacion DEFAULT SYSDATETIME(),
+    fecha_actualizacion DATETIME2(0) NOT NULL
+        CONSTRAINT DF_usuarios_fecha_actualizacion DEFAULT SYSDATETIME(),
 
-CREATE TABLE carreras (
-    id_carrera INT AUTO_INCREMENT PRIMARY KEY,
-    nombre VARCHAR(100) NOT NULL UNIQUE,
-    descripcion TEXT NULL,
-    estado ENUM('Activo','Inactivo') NOT NULL DEFAULT 'Activo',
-    fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    CONSTRAINT UQ_usuarios_usuario UNIQUE (usuario),
+    CONSTRAINT CK_usuarios_intentos CHECK (intentos_fallidos >= 0)
 );
+GO
 
-CREATE TABLE estudiantes (
-    id_estudiante INT AUTO_INCREMENT PRIMARY KEY,
-    cip VARCHAR(30) NOT NULL UNIQUE,
-    primer_nombre VARCHAR(50) NOT NULL,
-    segundo_nombre VARCHAR(50) NULL,
-    primer_apellido VARCHAR(50) NOT NULL,
-    segundo_apellido VARCHAR(50) NULL,
-    fecha_nacimiento DATE NOT NULL,
-    id_carrera INT NOT NULL,
-    estado ENUM('Activo','Inactivo') NOT NULL DEFAULT 'Activo',
-    fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT fk_estudiantes_carreras
-        FOREIGN KEY (id_carrera) REFERENCES carreras(id_carrera)
-);
+CREATE UNIQUE INDEX UX_usuarios_correo
+ON usuarios(correo)
+WHERE correo IS NOT NULL;
+GO
 
-CREATE TABLE categorias (
-    id_categoria INT AUTO_INCREMENT PRIMARY KEY,
-    nombre VARCHAR(100) NOT NULL UNIQUE,
-    descripcion TEXT NULL,
-    estado ENUM('Activo','Inactivo') NOT NULL DEFAULT 'Activo',
-    fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
+CREATE TABLE usuarios_roles (
+    id_usuario INT NOT NULL,
+    id_rol INT NOT NULL,
+    fecha_asignacion DATETIME2(0) NOT NULL
+        CONSTRAINT DF_usuarios_roles_fecha DEFAULT SYSDATETIME(),
 
-CREATE TABLE libros (
-    id_libro INT AUTO_INCREMENT PRIMARY KEY,
-    titulo VARCHAR(200) NOT NULL,
-    autor VARCHAR(150) NULL,
-    isbn VARCHAR(30) NULL UNIQUE,
-    editorial VARCHAR(100) NULL,
-    anio_publicacion YEAR NULL,
-    descripcion TEXT NULL,
-    existencias INT NOT NULL DEFAULT 0,
-    imagen VARCHAR(255) NULL,
-    thumbnail VARCHAR(255) NULL,
-    ubicacion VARCHAR(100) NULL,
-    id_categoria INT NOT NULL,
-    estado ENUM('Activo','Inactivo') NOT NULL DEFAULT 'Activo',
-    fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT fk_libros_categorias
-        FOREIGN KEY (id_categoria) REFERENCES categorias(id_categoria)
-);
+    CONSTRAINT PK_usuarios_roles
+        PRIMARY KEY (id_usuario, id_rol),
 
-CREATE TABLE reservas (
-    id_reserva INT AUTO_INCREMENT PRIMARY KEY,
-    id_estudiante INT NOT NULL,
-    id_libro INT NOT NULL,
-    fecha_reserva DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    fecha_devolucion DATETIME NULL,
-    estado ENUM('Prestado','Devuelto','Cancelado') NOT NULL DEFAULT 'Prestado',
-    CONSTRAINT fk_reservas_estudiantes
-        FOREIGN KEY (id_estudiante) REFERENCES estudiantes(id_estudiante),
-    CONSTRAINT fk_reservas_libros
-        FOREIGN KEY (id_libro) REFERENCES libros(id_libro)
-);
+    CONSTRAINT FK_usuarios_roles_usuario
+        FOREIGN KEY (id_usuario)
+        REFERENCES usuarios(id_usuario)
+        ON DELETE CASCADE,
 
-CREATE TABLE solicitudes (
-    id_solicitud INT AUTO_INCREMENT PRIMARY KEY,
-    id_estudiante INT NULL,
-    titulo_libro VARCHAR(200) NOT NULL,
-    area ENUM('Matemáticas','Ciencias','Tecnologías','Deporte','Salud','Revistas Científicas') NOT NULL,
-    descripcion TEXT NULL,
-    fecha DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    estado ENUM('Pendiente','Revisado','Aprobado','Rechazado') NOT NULL DEFAULT 'Pendiente',
-    CONSTRAINT fk_solicitudes_estudiantes
-        FOREIGN KEY (id_estudiante) REFERENCES estudiantes(id_estudiante)
+    CONSTRAINT FK_usuarios_roles_rol
+        FOREIGN KEY (id_rol)
+        REFERENCES roles(id_rol)
+        ON DELETE CASCADE
 );
+GO
+
+CREATE TABLE roles_permisos (
+    id_rol INT NOT NULL,
+    id_permiso INT NOT NULL,
+
+    CONSTRAINT PK_roles_permisos
+        PRIMARY KEY (id_rol, id_permiso),
+
+    CONSTRAINT FK_roles_permisos_rol
+        FOREIGN KEY (id_rol)
+        REFERENCES roles(id_rol)
+        ON DELETE CASCADE,
+
+    CONSTRAINT FK_roles_permisos_permiso
+        FOREIGN KEY (id_permiso)
+        REFERENCES permisos(id_permiso)
+        ON DELETE CASCADE
+);
+GO
 
 CREATE TABLE logs_login (
-    id_log INT AUTO_INCREMENT PRIMARY KEY,
-    usuario VARCHAR(50),
-    ip VARCHAR(50),
-    navegador TEXT,
-    metodo VARCHAR(20),
-    url VARCHAR(255),
-    resultado VARCHAR(50),
-    fecha DATETIME DEFAULT CURRENT_TIMESTAMP
+    id_log BIGINT IDENTITY(1,1) PRIMARY KEY,
+    id_usuario INT NULL,
+    usuario_intentado VARCHAR(80) NULL,
+    ip VARCHAR(45) NULL,
+    navegador VARCHAR(500) NULL,
+    metodo VARCHAR(10) NULL,
+    url VARCHAR(500) NULL,
+    resultado VARCHAR(30) NOT NULL,
+    detalle VARCHAR(500) NULL,
+    fecha DATETIME2(0) NOT NULL
+        CONSTRAINT DF_logs_login_fecha DEFAULT SYSDATETIME(),
+
+    CONSTRAINT FK_logs_login_usuario
+        FOREIGN KEY (id_usuario)
+        REFERENCES usuarios(id_usuario)
+        ON DELETE SET NULL
 );
+GO
 
-INSERT INTO usuarios
-(nombre, usuario, password, rol, estado)
-VALUES
-(
-'Administrador General',
-'admin',
-'$2y$10$ODdUyGxBPECS0Vw1A4.3/OJuUjISEcu4q8s5wg4K1MV2XNNOj0jKi',
-'Administrador',
-'Activo'
+CREATE INDEX IX_logs_login_fecha
+ON logs_login(fecha);
+GO
+
+CREATE INDEX IX_logs_login_usuario_intentado
+ON logs_login(usuario_intentado);
+GO
+
+CREATE TABLE logs_errores (
+    id_error BIGINT IDENTITY(1,1) PRIMARY KEY,
+    id_usuario INT NULL,
+    modulo VARCHAR(100) NULL,
+    mensaje VARCHAR(1000) NOT NULL,
+    excepcion VARCHAR(MAX) NULL,
+    archivo VARCHAR(500) NULL,
+    linea INT NULL,
+    ip VARCHAR(45) NULL,
+    url VARCHAR(500) NULL,
+    fecha DATETIME2(0) NOT NULL
+        CONSTRAINT DF_logs_errores_fecha DEFAULT SYSDATETIME(),
+
+    CONSTRAINT FK_logs_errores_usuario
+        FOREIGN KEY (id_usuario)
+        REFERENCES usuarios(id_usuario)
+        ON DELETE SET NULL
 );
+GO
 
-INSERT INTO carreras(nombre, descripcion) VALUES
-('Licenciatura en Desarrollo y Gestión de Software', 'Carrera de sistemas computacionales'),
-('Ingeniería en Sistemas', 'Carrera relacionada con sistemas'),
-('Ingeniería Industrial', 'Carrera industrial'),
-('Ingeniería Civil', 'Carrera civil');
+CREATE INDEX IX_logs_errores_fecha
+ON logs_errores(fecha);
+GO
 
-INSERT INTO categorias(nombre, descripcion) VALUES
-('Química', 'Libros de química'),
-('Sistemas', 'Libros de sistemas y programación'),
-('Lógica', 'Libros de lógica'),
-('Matemática', 'Libros de matemática'),
-('Estadística', 'Libros de estadística');*/
+/* Tabla genérica para almacenar firmas digitales de registros.
+   La aplicación PHP deberá crear y verificar la firma mediante interfaces. */
+CREATE TABLE firmas_registros (
+    id_firma BIGINT IDENTITY(1,1) PRIMARY KEY,
+    tabla VARCHAR(128) NOT NULL,
+    id_registro BIGINT NOT NULL,
+    firma VARBINARY(MAX) NOT NULL,
+    algoritmo VARCHAR(50) NOT NULL,
+    id_usuario_firmante INT NULL,
+    fecha_firma DATETIME2(0) NOT NULL
+        CONSTRAINT DF_firmas_fecha DEFAULT SYSDATETIME(),
 
-CREATE DATABASE IF NOT EXISTS myprojectbiblioteca_v2
-CHARACTER SET utf8mb4
-COLLATE utf8mb4_general_ci;
-
-USE myprojectbiblioteca_v2;
-
-DROP TABLE IF EXISTS logs_login;
-DROP TABLE IF EXISTS solicitudes;
-DROP TABLE IF EXISTS reservas;
-DROP TABLE IF EXISTS libros;
-DROP TABLE IF EXISTS categorias;
-DROP TABLE IF EXISTS estudiantes;
-DROP TABLE IF EXISTS carreras;
-DROP TABLE IF EXISTS usuarios;
-
-CREATE TABLE usuarios (
-    id_usuario INT AUTO_INCREMENT PRIMARY KEY,
-    nombre VARCHAR(100) NOT NULL,
-    usuario VARCHAR(50) NOT NULL UNIQUE,
-    password VARCHAR(255) NOT NULL,
-    rol ENUM('Administrador','Bibliotecario') NOT NULL DEFAULT 'Bibliotecario',
-    estado ENUM('Activo','Inactivo') NOT NULL DEFAULT 'Activo',
-    intentos_fallidos INT NOT NULL DEFAULT 0,
-    bloqueado TINYINT(1) NOT NULL DEFAULT 0,
-    ultimo_login DATETIME NULL,
-    ultimo_intento DATETIME NULL,
-    fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    CONSTRAINT FK_firmas_usuario
+        FOREIGN KEY (id_usuario_firmante)
+        REFERENCES usuarios(id_usuario)
+        ON DELETE SET NULL
 );
+GO
+
+CREATE INDEX IX_firmas_registros_tabla_id
+ON firmas_registros(tabla, id_registro);
+GO
+
+/* ============================================================
+   ESTUDIANTES, PROFESORES Y ADMINISTRATIVOS
+   ============================================================ */
 
 CREATE TABLE carreras (
-    id_carrera INT AUTO_INCREMENT PRIMARY KEY,
-    nombre VARCHAR(100) NOT NULL UNIQUE,
-    descripcion TEXT NULL,
-    estado ENUM('Activo','Inactivo') NOT NULL DEFAULT 'Activo',
-    fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    id_carrera INT IDENTITY(1,1) PRIMARY KEY,
+    nombre VARCHAR(150) NOT NULL,
+    descripcion VARCHAR(500) NULL,
+    estado BIT NOT NULL
+        CONSTRAINT DF_carreras_estado DEFAULT 1,
+    fecha_creacion DATETIME2(0) NOT NULL
+        CONSTRAINT DF_carreras_fecha DEFAULT SYSDATETIME(),
+
+    CONSTRAINT UQ_carreras_nombre UNIQUE (nombre)
 );
+GO
 
 CREATE TABLE estudiantes (
-    id_estudiante INT AUTO_INCREMENT PRIMARY KEY,
-    cip VARCHAR(30) NOT NULL UNIQUE,
-    primer_nombre VARCHAR(50) NOT NULL,
-    segundo_nombre VARCHAR(50) NULL,
-    primer_apellido VARCHAR(50) NOT NULL,
-    segundo_apellido VARCHAR(50) NULL,
+    id_estudiante INT IDENTITY(1,1) PRIMARY KEY,
+    id_usuario INT NOT NULL,
+    cip VARCHAR(30) NOT NULL,
+    primer_nombre VARCHAR(60) NOT NULL,
+    segundo_nombre VARCHAR(60) NULL,
+    primer_apellido VARCHAR(60) NOT NULL,
+    segundo_apellido VARCHAR(60) NULL,
     fecha_nacimiento DATE NOT NULL,
     id_carrera INT NOT NULL,
-    estado ENUM('Activo','Inactivo') NOT NULL DEFAULT 'Activo',
-    pin_hash VARCHAR(255) NULL,
-    intentos_fallidos INT NOT NULL DEFAULT 0,
-    bloqueado TINYINT(1) NOT NULL DEFAULT 0,
-    ultimo_login DATETIME NULL,
-    ultimo_intento DATETIME NULL,
-    fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT fk_estudiantes_carreras
-        FOREIGN KEY (id_carrera) REFERENCES carreras(id_carrera)
+    estado BIT NOT NULL
+        CONSTRAINT DF_estudiantes_estado DEFAULT 1,
+    fecha_creacion DATETIME2(0) NOT NULL
+        CONSTRAINT DF_estudiantes_fecha DEFAULT SYSDATETIME(),
+    fecha_actualizacion DATETIME2(0) NOT NULL
+        CONSTRAINT DF_estudiantes_fecha_actualizacion DEFAULT SYSDATETIME(),
+
+    CONSTRAINT UQ_estudiantes_cip UNIQUE (cip),
+    CONSTRAINT UQ_estudiantes_usuario UNIQUE (id_usuario),
+
+    CONSTRAINT FK_estudiantes_usuario
+        FOREIGN KEY (id_usuario)
+        REFERENCES usuarios(id_usuario),
+
+    CONSTRAINT FK_estudiantes_carrera
+        FOREIGN KEY (id_carrera)
+        REFERENCES carreras(id_carrera)
 );
+GO
+
+CREATE INDEX IX_estudiantes_apellidos
+ON estudiantes(primer_apellido, segundo_apellido);
+GO
+
+CREATE TABLE profesores (
+    id_profesor INT IDENTITY(1,1) PRIMARY KEY,
+    id_usuario INT NOT NULL,
+    cip VARCHAR(30) NOT NULL,
+    primer_nombre VARCHAR(60) NOT NULL,
+    segundo_nombre VARCHAR(60) NULL,
+    primer_apellido VARCHAR(60) NOT NULL,
+    segundo_apellido VARCHAR(60) NULL,
+    departamento VARCHAR(150) NULL,
+    especialidad VARCHAR(150) NULL,
+    estado BIT NOT NULL
+        CONSTRAINT DF_profesores_estado DEFAULT 1,
+    fecha_creacion DATETIME2(0) NOT NULL
+        CONSTRAINT DF_profesores_fecha DEFAULT SYSDATETIME(),
+    fecha_actualizacion DATETIME2(0) NOT NULL
+        CONSTRAINT DF_profesores_fecha_actualizacion DEFAULT SYSDATETIME(),
+
+    CONSTRAINT UQ_profesores_cip UNIQUE (cip),
+    CONSTRAINT UQ_profesores_usuario UNIQUE (id_usuario),
+
+    CONSTRAINT FK_profesores_usuario
+        FOREIGN KEY (id_usuario)
+        REFERENCES usuarios(id_usuario)
+);
+GO
+
+CREATE TABLE administrativos (
+    id_administrativo INT IDENTITY(1,1) PRIMARY KEY,
+    id_usuario INT NOT NULL,
+    cip VARCHAR(30) NOT NULL,
+    primer_nombre VARCHAR(60) NOT NULL,
+    segundo_nombre VARCHAR(60) NULL,
+    primer_apellido VARCHAR(60) NOT NULL,
+    segundo_apellido VARCHAR(60) NULL,
+    cargo VARCHAR(150) NULL,
+    estado BIT NOT NULL
+        CONSTRAINT DF_administrativos_estado DEFAULT 1,
+    fecha_creacion DATETIME2(0) NOT NULL
+        CONSTRAINT DF_administrativos_fecha DEFAULT SYSDATETIME(),
+    fecha_actualizacion DATETIME2(0) NOT NULL
+        CONSTRAINT DF_administrativos_fecha_actualizacion DEFAULT SYSDATETIME(),
+
+    CONSTRAINT UQ_administrativos_cip UNIQUE (cip),
+    CONSTRAINT UQ_administrativos_usuario UNIQUE (id_usuario),
+
+    CONSTRAINT FK_administrativos_usuario
+        FOREIGN KEY (id_usuario)
+        REFERENCES usuarios(id_usuario)
+);
+GO
+
+/* ============================================================
+   LIBROS, CATEGORÍAS, TEMAS E IMÁGENES
+   ============================================================ */
 
 CREATE TABLE categorias (
-    id_categoria INT AUTO_INCREMENT PRIMARY KEY,
-    nombre VARCHAR(100) NOT NULL UNIQUE,
-    descripcion TEXT NULL,
-    estado ENUM('Activo','Inactivo') NOT NULL DEFAULT 'Activo',
-    fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    id_categoria INT IDENTITY(1,1) PRIMARY KEY,
+    nombre VARCHAR(100) NOT NULL,
+    descripcion VARCHAR(500) NULL,
+    estado BIT NOT NULL
+        CONSTRAINT DF_categorias_estado DEFAULT 1,
+    fecha_creacion DATETIME2(0) NOT NULL
+        CONSTRAINT DF_categorias_fecha DEFAULT SYSDATETIME(),
+
+    CONSTRAINT UQ_categorias_nombre UNIQUE (nombre)
 );
+GO
+
+CREATE TABLE temas (
+    id_tema INT IDENTITY(1,1) PRIMARY KEY,
+    nombre VARCHAR(100) NOT NULL,
+    descripcion VARCHAR(500) NULL,
+    estado BIT NOT NULL
+        CONSTRAINT DF_temas_estado DEFAULT 1,
+    fecha_creacion DATETIME2(0) NOT NULL
+        CONSTRAINT DF_temas_fecha DEFAULT SYSDATETIME(),
+
+    CONSTRAINT UQ_temas_nombre UNIQUE (nombre)
+);
+GO
 
 CREATE TABLE libros (
-    id_libro INT AUTO_INCREMENT PRIMARY KEY,
-    titulo VARCHAR(200) NOT NULL,
-    autor VARCHAR(150) NULL,
-    isbn VARCHAR(30) NULL UNIQUE,
-    editorial VARCHAR(100) NULL,
-    anio_publicacion YEAR NULL,
-    descripcion TEXT NULL,
-    existencias INT NOT NULL DEFAULT 0,
-    imagen VARCHAR(255) NULL,
-    thumbnail VARCHAR(255) NULL,
-    ubicacion VARCHAR(100) NULL,
+    id_libro INT IDENTITY(1,1) PRIMARY KEY,
+    titulo VARCHAR(250) NOT NULL,
+    autor VARCHAR(200) NOT NULL,
+    isbn VARCHAR(30) NULL,
+    editorial VARCHAR(150) NULL,
+    anio_publicacion SMALLINT NULL,
+    descripcion VARCHAR(MAX) NULL,
+    costo DECIMAL(10,2) NOT NULL
+        CONSTRAINT DF_libros_costo DEFAULT 0,
+    existencias_totales INT NOT NULL
+        CONSTRAINT DF_libros_existencias_totales DEFAULT 0,
+    existencias_disponibles INT NOT NULL
+        CONSTRAINT DF_libros_existencias_disponibles DEFAULT 0,
+    imagen_nombre VARCHAR(255) NULL,
+    imagen_ruta VARCHAR(500) NULL,
+    thumbnail_nombre VARCHAR(255) NULL,
+    thumbnail_ruta VARCHAR(500) NULL,
+    ubicacion_fisica VARCHAR(200) NULL,
     id_categoria INT NOT NULL,
-    estado ENUM('Activo','Inactivo') NOT NULL DEFAULT 'Activo',
-    fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT fk_libros_categorias
-        FOREIGN KEY (id_categoria) REFERENCES categorias(id_categoria)
+    estado BIT NOT NULL
+        CONSTRAINT DF_libros_estado DEFAULT 1,
+    fecha_creacion DATETIME2(0) NOT NULL
+        CONSTRAINT DF_libros_fecha DEFAULT SYSDATETIME(),
+    fecha_actualizacion DATETIME2(0) NOT NULL
+        CONSTRAINT DF_libros_fecha_actualizacion DEFAULT SYSDATETIME(),
+
+    CONSTRAINT FK_libros_categoria
+        FOREIGN KEY (id_categoria)
+        REFERENCES categorias(id_categoria),
+
+    CONSTRAINT CK_libros_costo
+        CHECK (costo >= 0),
+
+    CONSTRAINT CK_libros_existencias_totales
+        CHECK (existencias_totales >= 0),
+
+    CONSTRAINT CK_libros_existencias_disponibles
+        CHECK (
+            existencias_disponibles >= 0
+            AND existencias_disponibles <= existencias_totales
+        ),
+
+    CONSTRAINT CK_libros_anio
+        CHECK (
+            anio_publicacion IS NULL
+            OR anio_publicacion BETWEEN 1000 AND 2100
+        )
 );
+GO
+
+CREATE UNIQUE INDEX UX_libros_isbn
+ON libros(isbn)
+WHERE isbn IS NOT NULL;
+GO
+
+CREATE INDEX IX_libros_titulo
+ON libros(titulo);
+GO
+
+CREATE INDEX IX_libros_autor
+ON libros(autor);
+GO
+
+CREATE INDEX IX_libros_categoria
+ON libros(id_categoria);
+GO
+
+CREATE TABLE libros_temas (
+    id_libro INT NOT NULL,
+    id_tema INT NOT NULL,
+
+    CONSTRAINT PK_libros_temas
+        PRIMARY KEY (id_libro, id_tema),
+
+    CONSTRAINT FK_libros_temas_libro
+        FOREIGN KEY (id_libro)
+        REFERENCES libros(id_libro)
+        ON DELETE CASCADE,
+
+    CONSTRAINT FK_libros_temas_tema
+        FOREIGN KEY (id_tema)
+        REFERENCES temas(id_tema)
+        ON DELETE CASCADE
+);
+GO
+
+/* ============================================================
+   RESERVAS Y PRÉSTAMOS
+   ============================================================ */
 
 CREATE TABLE reservas (
-    id_reserva INT AUTO_INCREMENT PRIMARY KEY,
-    id_estudiante INT NOT NULL,
+    id_reserva BIGINT IDENTITY(1,1) PRIMARY KEY,
+    id_usuario INT NOT NULL,
     id_libro INT NOT NULL,
-    fecha_reserva DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    fecha_devolucion DATETIME NULL,
-    estado ENUM('Prestado','Devuelto','Cancelado') NOT NULL DEFAULT 'Prestado',
-    CONSTRAINT fk_reservas_estudiantes
-        FOREIGN KEY (id_estudiante) REFERENCES estudiantes(id_estudiante),
-    CONSTRAINT fk_reservas_libros
-        FOREIGN KEY (id_libro) REFERENCES libros(id_libro)
-);
+    fecha_reserva DATETIME2(0) NOT NULL
+        CONSTRAINT DF_reservas_fecha DEFAULT SYSDATETIME(),
+    fecha_vencimiento DATE NOT NULL,
+    fecha_devolucion_real DATETIME2(0) NULL,
+    cantidad INT NOT NULL
+        CONSTRAINT DF_reservas_cantidad DEFAULT 1,
+    estado VARCHAR(20) NOT NULL
+        CONSTRAINT DF_reservas_estado DEFAULT 'Reservado',
+    observacion VARCHAR(500) NULL,
+    fecha_actualizacion DATETIME2(0) NOT NULL
+        CONSTRAINT DF_reservas_actualizacion DEFAULT SYSDATETIME(),
 
-CREATE TABLE solicitudes (
-    id_solicitud INT AUTO_INCREMENT PRIMARY KEY,
-    id_estudiante INT NULL,
-    titulo_libro VARCHAR(200) NOT NULL,
-    area ENUM('Matemáticas','Ciencias','Tecnologías','Deporte','Salud','Revistas Científicas') NOT NULL,
-    descripcion TEXT NULL,
-    fecha DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    estado ENUM('Pendiente','Revisado','Aprobado','Rechazado') NOT NULL DEFAULT 'Pendiente',
-    CONSTRAINT fk_solicitudes_estudiantes
-        FOREIGN KEY (id_estudiante) REFERENCES estudiantes(id_estudiante)
-);
+    CONSTRAINT FK_reservas_usuario
+        FOREIGN KEY (id_usuario)
+        REFERENCES usuarios(id_usuario),
 
-CREATE TABLE logs_login (
-    id_log INT AUTO_INCREMENT PRIMARY KEY,
-    usuario VARCHAR(50),
-    ip VARCHAR(50),
-    navegador TEXT,
-    metodo VARCHAR(20),
-    url VARCHAR(255),
-    resultado VARCHAR(50),
-    fecha DATETIME DEFAULT CURRENT_TIMESTAMP
-);
+    CONSTRAINT FK_reservas_libro
+        FOREIGN KEY (id_libro)
+        REFERENCES libros(id_libro),
 
-INSERT INTO usuarios
-(nombre, usuario, password, rol, estado)
+    CONSTRAINT CK_reservas_cantidad
+        CHECK (cantidad > 0),
+
+    CONSTRAINT CK_reservas_estado
+        CHECK (
+            estado IN (
+                'Pendiente',
+                'Reservado',
+                'Prestado',
+                'Devuelto',
+                'Vencido',
+                'Cancelado'
+            )
+        ),
+
+    CONSTRAINT CK_reservas_fechas
+        CHECK (
+            fecha_vencimiento >= CAST(fecha_reserva AS DATE)
+        )
+);
+GO
+
+CREATE INDEX IX_reservas_fecha
+ON reservas(fecha_reserva);
+GO
+
+CREATE INDEX IX_reservas_estado
+ON reservas(estado);
+GO
+
+CREATE INDEX IX_reservas_usuario
+ON reservas(id_usuario);
+GO
+
+CREATE INDEX IX_reservas_libro
+ON reservas(id_libro);
+GO
+
+/* ============================================================
+   SOLICITUDES DE LIBROS NO DISPONIBLES
+   ============================================================ */
+
+CREATE TABLE solicitudes_libros (
+    id_solicitud BIGINT IDENTITY(1,1) PRIMARY KEY,
+    id_usuario INT NOT NULL,
+    titulo_libro VARCHAR(250) NOT NULL,
+    autor VARCHAR(200) NULL,
+    materia VARCHAR(150) NOT NULL,
+    motivo_interes VARCHAR(1000) NOT NULL,
+    fecha_solicitud DATETIME2(0) NOT NULL
+        CONSTRAINT DF_solicitudes_fecha DEFAULT SYSDATETIME(),
+    estado VARCHAR(20) NOT NULL
+        CONSTRAINT DF_solicitudes_estado DEFAULT 'Pendiente',
+    respuesta VARCHAR(1000) NULL,
+    fecha_respuesta DATETIME2(0) NULL,
+    id_usuario_responde INT NULL,
+
+    CONSTRAINT FK_solicitudes_usuario
+        FOREIGN KEY (id_usuario)
+        REFERENCES usuarios(id_usuario),
+
+    CONSTRAINT FK_solicitudes_usuario_responde
+        FOREIGN KEY (id_usuario_responde)
+        REFERENCES usuarios(id_usuario),
+
+    CONSTRAINT CK_solicitudes_estado
+        CHECK (
+            estado IN (
+                'Pendiente',
+                'En revisión',
+                'Aprobada',
+                'Rechazada',
+                'Adquirida'
+            )
+        )
+);
+GO
+
+CREATE INDEX IX_solicitudes_estado
+ON solicitudes_libros(estado);
+GO
+
+CREATE INDEX IX_solicitudes_fecha
+ON solicitudes_libros(fecha_solicitud);
+GO
+
+/* ============================================================
+   PRÉSTAMO INTERBIBLIOTECARIO
+   ============================================================ */
+
+CREATE TABLE instituciones (
+    id_institucion INT IDENTITY(1,1) PRIMARY KEY,
+    nombre VARCHAR(200) NOT NULL,
+    direccion VARCHAR(500) NULL,
+    telefono VARCHAR(30) NULL,
+    correo VARCHAR(150) NULL,
+    sitio_web VARCHAR(300) NULL,
+    estado BIT NOT NULL
+        CONSTRAINT DF_instituciones_estado DEFAULT 1,
+    fecha_creacion DATETIME2(0) NOT NULL
+        CONSTRAINT DF_instituciones_fecha DEFAULT SYSDATETIME(),
+
+    CONSTRAINT UQ_instituciones_nombre UNIQUE (nombre)
+);
+GO
+
+CREATE TABLE catalogo_externo (
+    id_libro_externo INT IDENTITY(1,1) PRIMARY KEY,
+    id_institucion INT NOT NULL,
+    titulo VARCHAR(250) NOT NULL,
+    autor VARCHAR(200) NOT NULL,
+    isbn VARCHAR(30) NULL,
+    descripcion VARCHAR(MAX) NULL,
+    url_catalogo VARCHAR(500) NULL,
+    disponible BIT NOT NULL
+        CONSTRAINT DF_catalogo_externo_disponible DEFAULT 1,
+    fecha_creacion DATETIME2(0) NOT NULL
+        CONSTRAINT DF_catalogo_externo_fecha DEFAULT SYSDATETIME(),
+
+    CONSTRAINT FK_catalogo_externo_institucion
+        FOREIGN KEY (id_institucion)
+        REFERENCES instituciones(id_institucion)
+);
+GO
+
+CREATE UNIQUE INDEX UX_catalogo_externo_institucion_isbn
+ON catalogo_externo(id_institucion, isbn)
+WHERE isbn IS NOT NULL;
+GO
+
+CREATE TABLE prestamos_interbibliotecarios (
+    id_prestamo_interbibliotecario BIGINT IDENTITY(1,1) PRIMARY KEY,
+    id_usuario INT NOT NULL,
+    id_libro_externo INT NOT NULL,
+    fecha_solicitud DATETIME2(0) NOT NULL
+        CONSTRAINT DF_prestamos_inter_fecha DEFAULT SYSDATETIME(),
+    fecha_aprobacion DATETIME2(0) NULL,
+    fecha_recepcion DATETIME2(0) NULL,
+    fecha_vencimiento DATE NULL,
+    fecha_devolucion DATETIME2(0) NULL,
+    estado VARCHAR(30) NOT NULL
+        CONSTRAINT DF_prestamos_inter_estado DEFAULT 'Solicitado',
+    observacion VARCHAR(1000) NULL,
+
+    CONSTRAINT FK_prestamos_inter_usuario
+        FOREIGN KEY (id_usuario)
+        REFERENCES usuarios(id_usuario),
+
+    CONSTRAINT FK_prestamos_inter_libro
+        FOREIGN KEY (id_libro_externo)
+        REFERENCES catalogo_externo(id_libro_externo),
+
+    CONSTRAINT CK_prestamos_inter_estado
+        CHECK (
+            estado IN (
+                'Solicitado',
+                'Aprobado',
+                'Rechazado',
+                'Recibido',
+                'Devuelto',
+                'Cancelado'
+            )
+        )
+);
+GO
+
+CREATE INDEX IX_prestamos_inter_fecha
+ON prestamos_interbibliotecarios(fecha_solicitud);
+GO
+
+CREATE INDEX IX_prestamos_inter_estado
+ON prestamos_interbibliotecarios(estado);
+GO
+
+/* ============================================================
+   PÁGINA PÚBLICA - CONTÁCTENOS
+   ============================================================ */
+
+CREATE TABLE mensajes_contacto (
+    id_mensaje BIGINT IDENTITY(1,1) PRIMARY KEY,
+    nombre VARCHAR(150) NOT NULL,
+    correo VARCHAR(150) NOT NULL,
+    asunto VARCHAR(200) NOT NULL,
+    mensaje VARCHAR(2000) NOT NULL,
+    estado VARCHAR(20) NOT NULL
+        CONSTRAINT DF_mensajes_contacto_estado DEFAULT 'Nuevo',
+    fecha DATETIME2(0) NOT NULL
+        CONSTRAINT DF_mensajes_contacto_fecha DEFAULT SYSDATETIME(),
+
+    CONSTRAINT CK_mensajes_contacto_estado
+        CHECK (estado IN ('Nuevo', 'Leído', 'Respondido', 'Archivado'))
+);
+GO
+
+/* ============================================================
+   DATOS INICIALES
+   ============================================================ */
+
+INSERT INTO roles (nombre, descripcion)
 VALUES
-(
-'Administrador General',
-'admin',
-'$2y$10$ODdUyGxBPECS0Vw1A4.3/OJuUjISEcu4q8s5wg4K1MV2XNNOj0jKi',
-'Administrador',
-'Activo'
-);
+(N'Administrador', N'Control total del sistema'),
+(N'Bibliotecario', N'Gestión de libros, reservas, usuarios y reportes'),
+(N'Estudiante', N'Consulta y reserva de libros'),
+(N'Profesor', N'Consulta y reserva de libros para docentes'),
+(N'Administrativo', N'Consulta y reserva de libros para personal administrativo');
+GO
 
-INSERT INTO carreras(nombre, descripcion) VALUES
-('Licenciatura en Desarrollo y Gestión de Software', 'Carrera de sistemas computacionales'),
-('Ingeniería en Sistemas', 'Carrera relacionada con sistemas'),
-('Ingeniería Industrial', 'Carrera industrial'),
-('Ingeniería Civil', 'Carrera civil');
+INSERT INTO permisos (codigo, modulo, accion, descripcion)
+VALUES
+('usuarios.ver', 'usuarios', 'ver', N'Ver usuarios'),
+('usuarios.crear', 'usuarios', 'crear', N'Crear usuarios'),
+('usuarios.editar', 'usuarios', 'editar', N'Editar usuarios'),
+('usuarios.eliminar', 'usuarios', 'eliminar', N'Desactivar o eliminar usuarios'),
 
-INSERT INTO categorias(nombre, descripcion) VALUES
-('Química', 'Libros de química'),
-('Sistemas', 'Libros de sistemas y programación'),
-('Lógica', 'Libros de lógica'),
-('Matemática', 'Libros de matemática'),
-('Estadística', 'Libros de estadística');
+('roles.gestionar', 'roles', 'gestionar', N'Gestionar roles y permisos'),
+
+('estudiantes.ver', 'estudiantes', 'ver', N'Ver estudiantes'),
+('estudiantes.crear', 'estudiantes', 'crear', N'Crear estudiantes'),
+('estudiantes.editar', 'estudiantes', 'editar', N'Editar estudiantes'),
+('estudiantes.eliminar', 'estudiantes', 'eliminar', N'Desactivar estudiantes'),
+
+('profesores.ver', 'profesores', 'ver', N'Ver profesores'),
+('profesores.crear', 'profesores', 'crear', N'Crear profesores'),
+('profesores.editar', 'profesores', 'editar', N'Editar profesores'),
+('profesores.eliminar', 'profesores', 'eliminar', N'Desactivar profesores'),
+
+('administrativos.ver', 'administrativos', 'ver', N'Ver administrativos'),
+('administrativos.crear', 'administrativos', 'crear', N'Crear administrativos'),
+('administrativos.editar', 'administrativos', 'editar', N'Editar administrativos'),
+('administrativos.eliminar', 'administrativos', 'eliminar', N'Desactivar administrativos'),
+
+('categorias.ver', 'categorias', 'ver', N'Ver categorías'),
+('categorias.crear', 'categorias', 'crear', N'Crear categorías'),
+('categorias.editar', 'categorias', 'editar', N'Editar categorías'),
+('categorias.eliminar', 'categorias', 'eliminar', N'Desactivar categorías'),
+
+('libros.ver', 'libros', 'ver', N'Ver y buscar libros'),
+('libros.crear', 'libros', 'crear', N'Crear libros'),
+('libros.editar', 'libros', 'editar', N'Editar libros'),
+('libros.eliminar', 'libros', 'eliminar', N'Desactivar libros'),
+
+('reservas.ver', 'reservas', 'ver', N'Ver reservas'),
+('reservas.crear', 'reservas', 'crear', N'Crear reservas'),
+('reservas.aprobar', 'reservas', 'aprobar', N'Aprobar reservas'),
+('reservas.devolver', 'reservas', 'devolver', N'Registrar devoluciones'),
+('reservas.cancelar', 'reservas', 'cancelar', N'Cancelar reservas'),
+
+('reportes.ver', 'reportes', 'ver', N'Ver reportes'),
+('reportes.exportar_excel', 'reportes', 'exportar_excel', N'Exportar reportes a Excel'),
+
+('solicitudes.ver', 'solicitudes', 'ver', N'Ver solicitudes de libros'),
+('solicitudes.crear', 'solicitudes', 'crear', N'Crear solicitudes de libros'),
+('solicitudes.gestionar', 'solicitudes', 'gestionar', N'Gestionar solicitudes de libros'),
+
+('interbibliotecario.ver', 'interbibliotecario', 'ver', N'Ver préstamos interbibliotecarios'),
+('interbibliotecario.crear', 'interbibliotecario', 'crear', N'Solicitar préstamos interbibliotecarios'),
+('interbibliotecario.gestionar', 'interbibliotecario', 'gestionar', N'Gestionar préstamos interbibliotecarios'),
+
+('logs.ver', 'logs', 'ver', N'Ver registros de acceso y errores');
+GO
+
+/* Administrador: todos los permisos */
+INSERT INTO roles_permisos (id_rol, id_permiso)
+SELECT r.id_rol, p.id_permiso
+FROM roles r
+CROSS JOIN permisos p
+WHERE r.nombre = N'Administrador';
+GO
+
+/* Bibliotecario */
+INSERT INTO roles_permisos (id_rol, id_permiso)
+SELECT r.id_rol, p.id_permiso
+FROM roles r
+CROSS JOIN permisos p
+WHERE r.nombre = N'Bibliotecario'
+  AND (
+        p.modulo IN (
+            'estudiantes',
+            'profesores',
+            'administrativos',
+            'categorias',
+            'libros',
+            'reservas',
+            'reportes',
+            'solicitudes',
+            'interbibliotecario',
+            'logs'
+        )
+        OR p.codigo = 'usuarios.ver'
+      );
+GO
+
+/* Estudiante */
+INSERT INTO roles_permisos (id_rol, id_permiso)
+SELECT r.id_rol, p.id_permiso
+FROM roles r
+CROSS JOIN permisos p
+WHERE r.nombre = N'Estudiante'
+  AND p.codigo IN (
+      'libros.ver',
+      'reservas.ver',
+      'reservas.crear',
+      'reservas.cancelar',
+      'solicitudes.ver',
+      'solicitudes.crear',
+      'interbibliotecario.ver',
+      'interbibliotecario.crear'
+  );
+GO
+
+/* Profesor */
+INSERT INTO roles_permisos (id_rol, id_permiso)
+SELECT r.id_rol, p.id_permiso
+FROM roles r
+CROSS JOIN permisos p
+WHERE r.nombre = N'Profesor'
+  AND p.codigo IN (
+      'libros.ver',
+      'reservas.ver',
+      'reservas.crear',
+      'reservas.cancelar',
+      'solicitudes.ver',
+      'solicitudes.crear',
+      'interbibliotecario.ver',
+      'interbibliotecario.crear'
+  );
+GO
+
+/* Administrativo */
+INSERT INTO roles_permisos (id_rol, id_permiso)
+SELECT r.id_rol, p.id_permiso
+FROM roles r
+CROSS JOIN permisos p
+WHERE r.nombre = N'Administrativo'
+  AND p.codigo IN (
+      'libros.ver',
+      'reservas.ver',
+      'reservas.crear',
+      'reservas.cancelar',
+      'solicitudes.ver',
+      'solicitudes.crear',
+      'interbibliotecario.ver',
+      'interbibliotecario.crear'
+  );
+GO
+
+INSERT INTO categorias (nombre, descripcion)
+VALUES
+(N'Química', N'Libros relacionados con química'),
+(N'Sistemas', N'Libros relacionados con informática y sistemas'),
+(N'Lógica', N'Libros relacionados con lógica'),
+(N'Matemática', N'Libros relacionados con matemática'),
+(N'Estadística', N'Libros relacionados con estadística');
+GO
+
+INSERT INTO temas (nombre, descripcion)
+VALUES
+(N'Programación', N'Programación y desarrollo de software'),
+(N'Bases de Datos', N'Diseño y administración de bases de datos'),
+(N'Redes', N'Redes y comunicaciones'),
+(N'Álgebra', N'Álgebra y operaciones matemáticas'),
+(N'Cálculo', N'Cálculo diferencial e integral'),
+(N'Probabilidad', N'Probabilidad y estadística'),
+(N'Química General', N'Fundamentos de química');
+GO
+
+/* ============================================================
+   VISTAS PARA REPORTES
+   ============================================================ */
+
+CREATE VIEW vw_libros_disponibilidad
+AS
+SELECT
+    l.id_libro,
+    l.titulo,
+    l.autor,
+    l.isbn,
+    c.nombre AS categoria,
+    l.costo,
+    l.existencias_totales,
+    l.existencias_disponibles,
+    CASE
+        WHEN l.estado = 1 AND l.existencias_disponibles > 0
+            THEN N'Disponible'
+        ELSE N'No disponible'
+    END AS disponibilidad,
+    l.imagen_ruta,
+    l.thumbnail_ruta,
+    l.ubicacion_fisica
+FROM libros l
+INNER JOIN categorias c
+    ON c.id_categoria = l.id_categoria;
+GO
+
+CREATE VIEW vw_reporte_reservas
+AS
+SELECT
+    r.id_reserva,
+    r.fecha_reserva,
+    r.fecha_vencimiento,
+    r.fecha_devolucion_real,
+    r.estado,
+    r.cantidad,
+    u.id_usuario,
+    u.usuario,
+    CASE
+        WHEN e.id_estudiante IS NOT NULL THEN N'Estudiante'
+        WHEN p.id_profesor IS NOT NULL THEN N'Docente'
+        WHEN a.id_administrativo IS NOT NULL THEN N'Administrativo'
+        ELSE N'Otro'
+    END AS tipo_usuario,
+    COALESCE(
+        NULLIF(
+            LTRIM(RTRIM(
+                COALESCE(e.primer_nombre + ' ', '') +
+                COALESCE(e.segundo_nombre + ' ', '') +
+                COALESCE(e.primer_apellido + ' ', '') +
+                COALESCE(e.segundo_apellido, '')
+            )),
+            ''
+        ),
+        NULLIF(
+            LTRIM(RTRIM(
+                COALESCE(p.primer_nombre + ' ', '') +
+                COALESCE(p.segundo_nombre + ' ', '') +
+                COALESCE(p.primer_apellido + ' ', '') +
+                COALESCE(p.segundo_apellido, '')
+            )),
+            ''
+        ),
+        NULLIF(
+            LTRIM(RTRIM(
+                COALESCE(a.primer_nombre + ' ', '') +
+                COALESCE(a.segundo_nombre + ' ', '') +
+                COALESCE(a.primer_apellido + ' ', '') +
+                COALESCE(a.segundo_apellido, '')
+            )),
+            ''
+        ),
+        u.nombre
+    ) AS nombre_persona,
+    l.id_libro,
+    l.titulo,
+    l.autor,
+    c.nombre AS categoria,
+    DATEDIFF(
+        DAY,
+        CAST(r.fecha_reserva AS DATE),
+        COALESCE(
+            CAST(r.fecha_devolucion_real AS DATE),
+            CAST(SYSDATETIME() AS DATE)
+        )
+    ) AS dias_reservado
+FROM reservas r
+INNER JOIN usuarios u
+    ON u.id_usuario = r.id_usuario
+INNER JOIN libros l
+    ON l.id_libro = r.id_libro
+INNER JOIN categorias c
+    ON c.id_categoria = l.id_categoria
+LEFT JOIN estudiantes e
+    ON e.id_usuario = u.id_usuario
+LEFT JOIN profesores p
+    ON p.id_usuario = u.id_usuario
+LEFT JOIN administrativos a
+    ON a.id_usuario = u.id_usuario;
+GO
+
+/* ============================================================
+   PROCEDIMIENTOS PARA REPORTES, BÚSQUEDAS Y RESERVAS
+   ============================================================ */
+
+CREATE PROCEDURE sp_buscar_libros
+    @texto VARCHAR(250)
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT DISTINCT
+        l.id_libro,
+        l.titulo,
+        l.autor,
+        l.isbn,
+        c.nombre AS categoria,
+        l.descripcion,
+        l.costo,
+        l.existencias_totales,
+        l.existencias_disponibles,
+        CASE
+            WHEN l.estado = 1 AND l.existencias_disponibles > 0
+                THEN N'Disponible'
+            ELSE N'No disponible'
+        END AS disponibilidad,
+        l.thumbnail_ruta
+    FROM libros l
+    INNER JOIN categorias c
+        ON c.id_categoria = l.id_categoria
+    WHERE
+        l.estado = 1
+        AND (
+            l.titulo LIKE '%' + @texto + '%'
+            OR l.autor LIKE '%' + @texto + '%'
+            OR c.nombre LIKE '%' + @texto + '%'
+            OR EXISTS (
+                SELECT 1
+                FROM libros_temas lt
+                INNER JOIN temas t
+                    ON t.id_tema = lt.id_tema
+                WHERE lt.id_libro = l.id_libro
+                  AND t.nombre LIKE '%' + @texto + '%'
+            )
+        )
+    ORDER BY l.titulo;
+END;
+GO
+
+CREATE PROCEDURE sp_reporte_reservas_por_fecha
+    @fecha_inicio DATE,
+    @fecha_fin DATE
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    IF @fecha_inicio > @fecha_fin
+        THROW 50001, N'La fecha inicial no puede ser mayor que la fecha final.', 1;
+
+    SELECT *
+    FROM vw_reporte_reservas
+    WHERE fecha_reserva >= @fecha_inicio
+      AND fecha_reserva < DATEADD(DAY, 1, @fecha_fin)
+    ORDER BY fecha_reserva DESC;
+END;
+GO
+
+CREATE PROCEDURE sp_libros_mas_usados
+    @fecha_inicio DATE,
+    @fecha_fin DATE,
+    @tipo_usuario VARCHAR(20) = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    IF @fecha_inicio > @fecha_fin
+        THROW 50002, N'La fecha inicial no puede ser mayor que la fecha final.', 1;
+
+    SELECT
+        id_libro,
+        titulo,
+        autor,
+        categoria,
+        tipo_usuario,
+        COUNT(*) AS total_reservas
+    FROM vw_reporte_reservas
+    WHERE fecha_reserva >= @fecha_inicio
+      AND fecha_reserva < DATEADD(DAY, 1, @fecha_fin)
+      AND (
+            @tipo_usuario IS NULL
+            OR tipo_usuario = @tipo_usuario
+          )
+    GROUP BY
+        id_libro,
+        titulo,
+        autor,
+        categoria,
+        tipo_usuario
+    ORDER BY total_reservas DESC, titulo;
+END;
+GO
+
+CREATE PROCEDURE sp_crear_reserva
+    @id_usuario INT,
+    @id_libro INT,
+    @dias INT = 7
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET XACT_ABORT ON;
+
+    IF @dias <= 0
+        THROW 50003, N'La cantidad de días debe ser mayor que cero.', 1;
+
+    IF NOT EXISTS (
+        SELECT 1
+        FROM usuarios
+        WHERE id_usuario = @id_usuario
+          AND estado = 1
+          AND bloqueado = 0
+    )
+        THROW 50004, N'El usuario no existe, está inactivo o está bloqueado.', 1;
+
+    BEGIN TRY
+        BEGIN TRANSACTION;
+
+        IF EXISTS (
+            SELECT 1
+            FROM reservas WITH (UPDLOCK, HOLDLOCK)
+            WHERE id_usuario = @id_usuario
+              AND id_libro = @id_libro
+              AND estado IN ('Pendiente', 'Reservado', 'Prestado')
+        )
+            THROW 50005, N'El usuario ya tiene una reserva activa para este libro.', 1;
+
+        UPDATE libros WITH (UPDLOCK, ROWLOCK)
+        SET
+            existencias_disponibles = existencias_disponibles - 1,
+            fecha_actualizacion = SYSDATETIME()
+        WHERE id_libro = @id_libro
+          AND estado = 1
+          AND existencias_disponibles > 0;
+
+        IF @@ROWCOUNT = 0
+            THROW 50006, N'El libro no existe, está inactivo o no tiene existencias disponibles.', 1;
+
+        INSERT INTO reservas (
+            id_usuario,
+            id_libro,
+            fecha_reserva,
+            fecha_vencimiento,
+            estado
+        )
+        VALUES (
+            @id_usuario,
+            @id_libro,
+            SYSDATETIME(),
+            DATEADD(DAY, @dias, CAST(SYSDATETIME() AS DATE)),
+            'Reservado'
+        );
+
+        DECLARE @id_reserva BIGINT = SCOPE_IDENTITY();
+
+        COMMIT TRANSACTION;
+
+        SELECT @id_reserva AS id_reserva;
+    END TRY
+    BEGIN CATCH
+        IF @@TRANCOUNT > 0
+            ROLLBACK TRANSACTION;
+
+        THROW;
+    END CATCH;
+END;
+GO
+
+CREATE PROCEDURE sp_devolver_reserva
+    @id_reserva BIGINT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET XACT_ABORT ON;
+
+    BEGIN TRY
+        BEGIN TRANSACTION;
+
+        DECLARE @id_libro INT;
+
+        SELECT @id_libro = id_libro
+        FROM reservas WITH (UPDLOCK, HOLDLOCK)
+        WHERE id_reserva = @id_reserva
+          AND estado IN ('Reservado', 'Prestado');
+
+        IF @id_libro IS NULL
+            THROW 50007, N'La reserva no existe o ya fue cerrada.', 1;
+
+        UPDATE reservas
+        SET
+            estado = 'Devuelto',
+            fecha_devolucion_real = SYSDATETIME(),
+            fecha_actualizacion = SYSDATETIME()
+        WHERE id_reserva = @id_reserva;
+
+        UPDATE libros
+        SET
+            existencias_disponibles =
+                CASE
+                    WHEN existencias_disponibles < existencias_totales
+                        THEN existencias_disponibles + 1
+                    ELSE existencias_disponibles
+                END,
+            fecha_actualizacion = SYSDATETIME()
+        WHERE id_libro = @id_libro;
+
+        COMMIT TRANSACTION;
+    END TRY
+    BEGIN CATCH
+        IF @@TRANCOUNT > 0
+            ROLLBACK TRANSACTION;
+
+        THROW;
+    END CATCH;
+END;
+GO
+
+/* ============================================================
+   CONSULTAS DE COMPROBACIÓN
+   ============================================================ */
+
+SELECT * FROM roles;
+SELECT * FROM permisos;
+SELECT * FROM categorias;
+SELECT * FROM temas;
+GO
+
+/* ============================================================
+   IMPORTANTE:
+   No se inserta un administrador con contraseña fija por seguridad.
+
+   Para crear el primer administrador:
+   1. Generar el hash en PHP:
+      password_hash('TuClaveSegura', PASSWORD_DEFAULT)
+
+   2. Insertar el usuario reemplazando HASH_GENERADO:
+      INSERT INTO usuarios
+      (nombre, usuario, password_hash, correo)
+      VALUES
+      ('Administrador General', 'admin', 'HASH_GENERADO', 'admin@biblioteca.local');
+
+   3. Asignar el rol:
+      INSERT INTO usuarios_roles (id_usuario, id_rol)
+      SELECT u.id_usuario, r.id_rol
+      FROM usuarios u
+      CROSS JOIN roles r
+      WHERE u.usuario = 'admin'
+        AND r.nombre = 'Administrador';
+   ============================================================ */
