@@ -142,7 +142,6 @@ class UsuarioController extends Controller
             exit();
         }
 
-        // Verificar que todos los roles existan y estén activos.
         $rolesActivos = $usuarioModel->listarRolesActivos();
 
         $idsRolesActivos = array_map(fn(array $rol): int => (int) $rol['id_rol'], $rolesActivos);
@@ -264,10 +263,6 @@ class UsuarioController extends Controller
             exit();
         }
 
-        /*
-         * Verifica que todos los roles seleccionados
-         * existan y estén activos.
-         */
         $rolesActivos = $usuarioModel->listarRolesActivos();
 
         $idsRolesActivos = array_map(fn(array $rol): int => (int) $rol['id_rol'], $rolesActivos);

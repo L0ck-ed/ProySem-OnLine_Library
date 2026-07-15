@@ -7,25 +7,18 @@ use RuntimeException;
 
 class DatabaseConfig
 {
-    /**
-     * ÚNICO ajuste que cada integrante del equipo debe cambiar en su máquina:
-     * 'mysql'  -> si usas MySQL/WAMP
-     * 'sqlsrv' -> si usas SQL Server
-     * El resto del sistema (modelos, queries) funciona igual sin tocar nada más.
-     */
 
-    //coloca mysql o sqlsrv
-    // coloca mysql o sqlsrv
+    
     private const DRIVER = 'sqlsrv';
 
-    // MySQL
+    
     private const MYSQL_HOST = 'localhost';
     private const MYSQL_DB = 'myprojectbiblioteca_v2';
     private const MYSQL_USER = 'root';
     private const MYSQL_PASSWORD = '';
     private const MYSQL_CHARSET = 'utf8mb4';
 
-    // SQL Server
+
     private const SQLSRV_SERVER = '.\\SQLEXPRESS';
     private const SQLSRV_DATABASE = 'BibliotecaDigitalDB';
     private const SQLSRV_USER = 'sa';
