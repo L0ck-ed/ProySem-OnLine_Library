@@ -6,6 +6,7 @@ use App\Helpers\Logger;
 use App\Helpers\Session;
 use App\Models\Usuario;
 use App\Models\UsuarioRegular;
+use App\Middleware\Auth;
 
 class UsuarioRegularAuthService
 {
@@ -110,6 +111,10 @@ class UsuarioRegularAuthService
             ];
         }
 
+        // Al entrar al portal regular se invalida cualquier sesión administrativa
+        // anterior que haya quedado abierta en el mismo navegador.
+        Auth::limpiarSesionAdministrativa();
+
         $modeloRegular->actualizarLogin($idUsuario);
 
         Logger::login(
@@ -126,6 +131,7 @@ class UsuarioRegularAuthService
             session_regenerate_id(true);
         }
 
+        Session::set('tipo_sesion', 'portal');
         Session::set('portal_autenticado', true);
         Session::set('portal_id_usuario', $idUsuario);
         Session::set('portal_tipo_usuario', $usuario['tipo_usuario']);

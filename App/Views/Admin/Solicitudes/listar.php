@@ -35,14 +35,14 @@ $claseEstado = static function (string $estado): string {
 };
 ?>
 
-<div class="container-fluid">
+<div class="container-fluid admin-page admin-page-solicitudes">
     <div class="row">
         <div class="col-md-2 p-0">
             <?php require_once __DIR__ . '/../Partials/sidebar.php'; ?>
         </div>
 
-        <div class="col-md-10 p-4">
-            <div class="mb-4">
+        <main class="col-md-10 admin-main">
+            <div class="admin-page-header admin-page-header-simple">
                 <h2 class="mb-1">
                     Solicitudes de libros
                 </h2>
@@ -54,22 +54,31 @@ $claseEstado = static function (string $estado): string {
             </div>
 
             <?php if ($success): ?>
-                <div class="alert alert-success">
+                <div class="alert alert-success admin-alert">
                     <?= $escapar($success) ?>
                 </div>
             <?php endif; ?>
 
             <?php if ($error): ?>
-                <div class="alert alert-danger">
+                <div class="alert alert-danger admin-alert">
                     <?= $escapar($error) ?>
                 </div>
             <?php endif; ?>
 
-            <div class="card p-4">
+            <div class="card admin-list-card">
+                <div class="admin-card-heading">
+                    <div>
+                        <h2 class="admin-card-title mb-1">
+                            <i class="fa-solid fa-list-check"></i>
+                            Bandeja de solicitudes
+                        </h2>
+                        <p class="mb-0">Revisa y gestiona las solicitudes de libros enviadas por los usuarios.</p>
+                    </div>
+                </div>
                 <form
                     method="GET"
                     action="<?= Config::url('solicitudes') ?>"
-                    class="row g-2 mb-4"
+                    class="row g-3 admin-filter-form"
                 >
                     <div class="col-lg-6">
                         <input
@@ -135,7 +144,7 @@ $claseEstado = static function (string $estado): string {
                 </form>
 
                 <div class="table-responsive">
-                    <table class="table table-hover align-middle">
+                    <table class="table table-hover align-middle admin-table">
                         <thead class="table-primary">
                             <tr>
                                 <th>ID</th>
@@ -250,7 +259,7 @@ $claseEstado = static function (string $estado): string {
                 <?php if ($totalPaginas > 1): ?>
                     <nav class="mt-3">
                         <ul
-                            class="pagination justify-content-center mb-0"
+                            class="pagination justify-content-center mb-0 admin-pagination"
                         >
                             <?php for ($i = 1; $i <= $totalPaginas; $i++): ?>
                                 <?php $parametros = [
@@ -277,7 +286,7 @@ $claseEstado = static function (string $estado): string {
                     </nav>
                 <?php endif; ?>
             </div>
-        </div>
+        </main>
     </div>
 </div>
 

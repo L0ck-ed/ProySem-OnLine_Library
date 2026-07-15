@@ -18,14 +18,14 @@ $urlExcel = Config::url('reservas/reporte/excel') . '?' .
     http_build_query($filtros);
 ?>
 
-<div class="container-fluid">
+<div class="container-fluid admin-page admin-page-reporte-reservas">
     <div class="row">
         <div class="col-md-2 p-0">
             <?php require_once __DIR__ . '/../Partials/sidebar.php'; ?>
         </div>
 
-        <div class="col-md-10 p-4">
-            <div class="d-flex justify-content-between align-items-center mb-4">
+        <main class="col-md-10 admin-main">
+            <div class="admin-page-header d-flex justify-content-between align-items-center gap-3">
                 <div>
                     <h2 class="mb-1">Reporte de reservas</h2>
                     <p class="text-muted mb-0">
@@ -52,7 +52,7 @@ $urlExcel = Config::url('reservas/reporte/excel') . '?' .
                     'Administrativos' => $resumen['administrativos'] ?? 0,
                 ] as $titulo => $valor): ?>
                     <div class="col-md-3">
-                        <div class="card p-3 h-100">
+                        <div class="card report-stat-card h-100">
                             <small class="text-muted"><?= $escapar($titulo) ?></small>
                             <strong class="fs-3"><?= (int) $valor ?></strong>
                         </div>
@@ -60,7 +60,7 @@ $urlExcel = Config::url('reservas/reporte/excel') . '?' .
                 <?php endforeach; ?>
             </div>
 
-            <div class="card p-4 mb-4">
+            <div class="card admin-form-card report-filter-card mb-4">
                 <form method="GET" action="<?= Config::url('reservas/reporte') ?>">
                     <div class="row g-3">
                         <div class="col-md-3">
@@ -143,7 +143,7 @@ $urlExcel = Config::url('reservas/reporte/excel') . '?' .
                         </div>
                     </div>
 
-                    <div class="d-flex justify-content-end gap-2 mt-3">
+                    <div class="admin-form-actions d-flex justify-content-end gap-2 mt-3">
                         <a href="<?= Config::url('reservas/reporte') ?>" class="btn btn-secondary">
                             Limpiar
                         </a>
@@ -154,9 +154,9 @@ $urlExcel = Config::url('reservas/reporte/excel') . '?' .
                 </form>
             </div>
 
-            <div class="card p-4">
+            <div class="card admin-list-card report-table-card">
                 <div class="table-responsive">
-                    <table class="table table-hover align-middle">
+                    <table class="table table-hover align-middle admin-table">
                         <thead class="table-primary">
                             <tr>
                                 <th>ID</th>
@@ -205,7 +205,7 @@ $urlExcel = Config::url('reservas/reporte/excel') . '?' .
                     </table>
                 </div>
             </div>
-        </div>
+        </main>
     </div>
 </div>
 

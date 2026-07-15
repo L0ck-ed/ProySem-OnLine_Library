@@ -150,7 +150,7 @@ C:/xampp/htdocs/ProySem-OnLine_Library
 2. Importar la base de datos desde:
 
 ```text
-Database/biblioteca.sql
+DataBase/biblioteca.sql
 ```
 
 3. Revisar la configuración de conexión en:
@@ -201,6 +201,34 @@ Ejemplo:
 ```text
 App/controllers/usuario_controller.php
 ```
+
+
+---
+
+## Actualización: estructura académica y estadísticas
+
+Esta versión incorpora el módulo administrativo **Estructura académica**, con CRUD de facultades, departamentos y carreras, además del análisis de demanda de libros por unidad académica.
+
+### Base de datos ya existente
+
+Ejecuta una sola vez en SQL Server Management Studio:
+
+```text
+DataBase/actualizacion_estructura_academica.sql
+```
+
+El script conserva los registros existentes, crea las relaciones faltantes, agrega los permisos del módulo y precarga un catálogo base editable de **6 facultades, 30 departamentos y 65 carreras/programas técnicos** publicado por las facultades de la UTP.
+
+Después de ejecutarlo:
+
+1. Cierra sesión y vuelve a iniciar como Administrador o Bibliotecario.
+2. Abre **Estructura académica** y revisa el catálogo precargado.
+3. Actualiza, añade, desactiva o elimina los registros que correspondan.
+4. Asigna, cuando aplique, el departamento responsable de cada carrera.
+5. Revisa los estudiantes y profesores existentes para asignarles su carrera o departamento correcto.
+6. Abre **Estadísticas** para analizar uso confirmado o demanda solicitada por facultad, carrera, departamento e intervalo.
+
+Los registros relacionados no se eliminan de forma definitiva; deben desactivarse para conservar el historial académico y de préstamos.
 
 ---
 

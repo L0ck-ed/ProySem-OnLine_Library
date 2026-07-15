@@ -1,0 +1,12 @@
+CORRECCIÓN DE ESTADOS EN ESTRUCTURA ACADÉMICA
+==============================================
+
+Se corrigió el contraste visual de las insignias de estado en:
+- Facultades
+- Departamentos
+- Carreras
+
+Ahora los registros activos muestran una insignia verde con el texto "Activa" y
+los inactivos una insignia roja con el texto "Inactiva".
+
+No requiere cambios en la base de datos.

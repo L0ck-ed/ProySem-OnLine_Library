@@ -1,0 +1,27 @@
+CORRECCIÓN DE SEGURIDAD: ACCESO AL PANEL ADMINISTRATIVO
+======================================================
+
+Problema corregido
+------------------
+Una cuenta con rol Estudiante, Profesor o Administrativo podía autenticar sus
+credenciales desde el formulario administrativo y alcanzar el dashboard.
+Además, una sesión administrativa anterior podía permanecer abierta al iniciar
+sesión posteriormente como usuario regular en el mismo navegador.
+
+Cambios aplicados
+-----------------
+1. El acceso administrativo solo acepta los roles Administrador y Bibliotecario.
+2. Todas las rutas administrativas vuelven a validar en la base de datos:
+   - que la cuenta siga activa;
+   - que conserve un rol administrativo activo;
+   - que la sesión corresponda realmente al panel administrativo.
+3. El dashboard ya no se protege únicamente comprobando que exista un usuario.
+4. Al iniciar sesión como estudiante o profesor se elimina cualquier sesión
+   administrativa anterior del mismo navegador.
+5. Al iniciar sesión como administrador se limpia cualquier sesión regular previa.
+6. Se agregó el marcador de sesión tipo_sesion para impedir que una sesión del
+   portal regular sea reutilizada en las rutas del panel.
+7. Si el rol administrativo se retira mientras la persona tiene una sesión abierta,
+   el acceso se revoca en la siguiente petición.
+
+No se requieren cambios en la base de datos.

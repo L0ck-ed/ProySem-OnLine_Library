@@ -1,0 +1,16 @@
+CORRECCIÓN DE ESTRUCTURA ACADÉMICA
+==================================
+
+Se corrigió el error:
+Class "Auth" not found en App/Views/Admin/EstructuraAcademica/acciones.php
+
+Causa:
+El archivo acciones.php es una vista parcial independiente y no hereda los alias
+importados mediante use en index.php.
+
+Cambios:
+- Se importó App\Middleware\Auth en acciones.php.
+- Se importó App\Config\Config en acciones.php.
+- Se revisaron las vistas para detectar otras referencias a Auth, Config y Session
+  sin su importación correspondiente.
+- No requiere cambios en la base de datos.

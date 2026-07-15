@@ -1,0 +1,14 @@
+FUNCIÓN DE DESBLOQUEO DESDE EL ADMINISTRADOR
+=============================================
+
+Se añadió:
+- Ruta GET /usuarios/bloqueados.
+- Ruta POST /usuarios/desbloquear.
+- Vista administrativa con todas las cuentas bloqueadas.
+- Botón individual para desbloquear una cuenta.
+- Reinicio de intentos_fallidos, bloqueado y bloqueado_hasta.
+- Acceso protegido con el permiso existente usuarios.editar.
+- Enlace desde el menú lateral y desde la lista de usuarios.
+
+No requiere cambios nuevos en la base de datos porque utiliza las columnas
+que ya forman parte del sistema de tres intentos.

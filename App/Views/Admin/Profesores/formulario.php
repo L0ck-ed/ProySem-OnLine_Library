@@ -29,15 +29,15 @@ $titulo = $esEdicion ? 'Editar profesor' : 'Nuevo profesor';
 $accion = $esEdicion ? Config::url('profesores/actualizar') : Config::url('profesores/guardar');
 ?>
 
-<div class="container-fluid">
+<div class="container-fluid admin-page admin-page-profesores">
     <div class="row">
         <div class="col-md-2 p-0">
             <?php require_once __DIR__ . '/../Partials/sidebar.php'; ?>
         </div>
 
-        <div class="col-md-10 p-4">
+        <main class="col-md-10 admin-main">
             <div
-                class="d-flex justify-content-between align-items-center mb-4"
+                class="admin-page-header d-flex justify-content-between align-items-center gap-3"
             >
                 <div>
                     <h2 class="mb-1">
@@ -61,7 +61,7 @@ $accion = $esEdicion ? Config::url('profesores/actualizar') : Config::url('profe
             </div>
 
             <?php if ($error): ?>
-                <div class="alert alert-danger">
+                <div class="alert alert-danger admin-alert">
                     <?= $escapar($error) ?>
                 </div>
             <?php endif; ?>
@@ -77,7 +77,7 @@ $accion = $esEdicion ? Config::url('profesores/actualizar') : Config::url('profe
                         value="<?= (int) $profesor['id_profesor'] ?>"
                     >
 
-                    <div class="card p-4 mb-4">
+                    <div class="card admin-form-card mb-4">
                         <h5 class="mb-3">
                             Cuenta de usuario
                         </h5>
@@ -93,7 +93,7 @@ $accion = $esEdicion ? Config::url('profesores/actualizar') : Config::url('profe
                         </p>
                     </div>
                 <?php else: ?>
-                    <div class="card p-4 mb-4">
+                    <div class="card admin-form-card mb-4">
                         <h5 class="mb-3">
                             Cuenta de usuario
                         </h5>
@@ -143,7 +143,7 @@ $accion = $esEdicion ? Config::url('profesores/actualizar') : Config::url('profe
                     </div>
                 <?php endif; ?>
 
-                <div class="card p-4 mb-4">
+                <div class="card admin-form-card mb-4">
                     <h5 class="mb-3">
                         Información profesional
                     </h5>
@@ -342,7 +342,7 @@ $accion = $esEdicion ? Config::url('profesores/actualizar') : Config::url('profe
                     </div>
                 </div>
 
-                <div class="d-flex justify-content-end gap-2">
+                <div class="admin-form-actions d-flex justify-content-end gap-2">
                     <a
                         href="<?= Config::url('profesores') ?>"
                         class="btn btn-secondary"
@@ -363,7 +363,7 @@ $accion = $esEdicion ? Config::url('profesores/actualizar') : Config::url('profe
                     </button>
                 </div>
             </form>
-        </div>
+        </main>
     </div>
 </div>
 

@@ -1,0 +1,252 @@
+/* =========================================================
+   PAQUETE DE ICONOS PERSONALIZADO
+   Los iconos originales se usan como máscaras para heredar
+   automáticamente el color de textos, botones y tarjetas.
+========================================================= */
+
+.fa-solid,
+.fa-regular,
+.pack-icon {
+    --library-icon: url('../IMG/libro.png');
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-style: normal;
+    line-height: 1;
+    vertical-align: -0.125em;
+}
+
+.pack-icon {
+    width: 1em;
+    height: 1em;
+}
+
+.fa-solid::before,
+.fa-regular::before,
+.pack-icon::before {
+    content: '' !important;
+    display: block;
+    width: 1em;
+    height: 1em;
+    flex: 0 0 1em;
+    background-color: currentColor;
+    -webkit-mask-image: var(--library-icon);
+    mask-image: var(--library-icon);
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+    -webkit-mask-position: center;
+    mask-position: center;
+    -webkit-mask-size: contain;
+    mask-size: contain;
+}
+
+.pack-icon::before {
+    width: 100%;
+    height: 100%;
+    flex-basis: 100%;
+}
+
+.fa-2x { font-size: 2em; }
+.fa-3x { font-size: 3em; }
+
+/* Navegación y acciones */
+.fa-house,
+.pack-icon-home { --library-icon: url('../IMG/home.png'); }
+
+.fa-magnifying-glass,
+.fa-search,
+.pack-icon-lupa { --library-icon: url('../IMG/lupa.png'); }
+
+.fa-arrow-left,
+.fa-chevron-left,
+.fa-angle-left,
+.pack-icon-flecha-izquierda { --library-icon: url('../IMG/flecha_izquierda.png'); }
+
+.fa-arrow-right,
+.fa-chevron-right,
+.fa-angle-right,
+.fa-arrow-right-to-bracket,
+.fa-right-to-bracket,
+.fa-right-from-bracket,
+.pack-icon-flecha-derecha { --library-icon: url('../IMG/flecha_derecha.png'); }
+
+.fa-arrow-down,
+.fa-chevron-down,
+.pack-icon-flecha-abajo { --library-icon: url('../IMG/flecha_abajo.png'); }
+
+.fa-arrow-up,
+.fa-chevron-up,
+.pack-icon-flecha-arriba { --library-icon: url('../IMG/flecha_arriba.png'); }
+
+.fa-rotate-left,
+.fa-arrow-rotate-left,
+.fa-clock-rotate-left,
+.fa-eraser,
+.pack-icon-actualizar { --library-icon: url('../IMG/actualizar.png'); }
+
+.fa-plus,
+.fa-circle-plus,
+.fa-user-plus,
+.fa-book-circle-plus { --library-icon: url('../IMG/equis.png'); }
+
+.fa-plus::before,
+.fa-circle-plus::before,
+.fa-user-plus::before,
+.fa-book-circle-plus::before { transform: rotate(45deg); }
+
+.fa-xmark,
+.fa-circle-xmark,
+.fa-calendar-xmark,
+.fa-book-circle-xmark,
+.fa-ban,
+.fa-user-slash,
+.fa-triangle-exclamation,
+.pack-icon-equis { --library-icon: url('../IMG/equis.png'); }
+
+.fa-check,
+.fa-circle-check,
+.fa-user-check,
+.fa-clipboard-check,
+.fa-floppy-disk,
+.pack-icon-gancho { --library-icon: url('../IMG/gancho.png'); }
+
+.fa-pen-to-square,
+.fa-user-pen,
+.fa-feather-pointed,
+.fa-align-left,
+.pack-icon-editar { --library-icon: url('../IMG/editar.png'); }
+
+.fa-trash,
+.fa-trash-can,
+.pack-icon-basura { --library-icon: url('../IMG/bote_de_basura.png'); }
+
+/* Usuarios, seguridad y perfil */
+.fa-user,
+.fa-users,
+.fa-user-graduate,
+.fa-chalkboard-user,
+.fa-user-tag,
+.fa-address-card,
+.fa-id-card,
+.fa-id-badge,
+.fa-award,
+.pack-icon-usuario { --library-icon: url('../IMG/usuario.png'); }
+
+.fa-graduation-cap,
+.fa-building-columns,
+.fa-building,
+.pack-icon-carreras { --library-icon: url('../IMG/carreras.png'); }
+
+.fa-lock,
+.fa-key,
+.fa-user-lock,
+.fa-user-shield,
+.fa-shield-halved,
+.pack-icon-candado-cerrado { --library-icon: url('../IMG/candado_cerrado.png'); }
+
+.fa-lock-open,
+.pack-icon-candado-abierto { --library-icon: url('../IMG/candado_abierto.png'); }
+
+.fa-user-gear,
+.fa-sliders,
+.fa-filter,
+.fa-microchip,
+.pack-icon-configuracion { --library-icon: url('../IMG/configuracion.png'); }
+
+.fa-eye,
+.pack-icon-ojo-abierto { --library-icon: url('../IMG/ojo_abierto.png'); }
+
+.fa-eye-slash,
+.pack-icon-ojo-cerrado { --library-icon: url('../IMG/ojo_cerrado.webp'); }
+
+/* Biblioteca y reservas */
+.fa-book,
+.fa-book-open,
+.fa-book-open-reader,
+.pack-icon-libro { --library-icon: url('../IMG/libro.png'); }
+
+.fa-bookmark,
+.fa-book-bookmark,
+.fa-calendar-check,
+.fa-hand-holding,
+.pack-icon-reserva { --library-icon: url('../IMG/reserva.png'); }
+
+.fa-calendar,
+.fa-calendar-day,
+.fa-cake-candles,
+.pack-icon-calendario { --library-icon: url('../IMG/calendario.png'); }
+
+.fa-clock,
+.pack-icon-reloj { --library-icon: url('../IMG/reloj.png'); }
+
+.fa-tag,
+.fa-tags,
+.fa-shapes,
+.fa-layer-group,
+.fa-border-all,
+.fa-bars,
+.fa-list-check,
+.fa-hashtag,
+.fa-barcode,
+.fa-square-root-variable,
+.fa-diagram-project,
+.fa-flask,
+.pack-icon-categorias { --library-icon: url('../IMG/categorias.png'); }
+
+/* Comunicación y datos */
+.fa-envelope,
+.fa-at,
+.fa-inbox,
+.fa-paper-plane,
+.fa-file-excel,
+.pack-icon-mail { --library-icon: url('../IMG/mail.png'); }
+
+.fa-circle-info,
+.fa-circle-exclamation,
+.fa-lightbulb,
+.fa-bolt,
+.fa-sparkles,
+.pack-icon-mensaje { --library-icon: url('../IMG/mensaje.png'); }
+
+.fa-chart-column,
+.fa-chart-line,
+.fa-chart-pie,
+.fa-chart-simple,
+.pack-icon-estadisticas { --library-icon: url('../IMG/estadisticas.png'); }
+
+.fa-location-dot,
+.pack-icon-ubicacion { --library-icon: url('../IMG/ubicacion.png'); }
+
+.fa-mobile-screen,
+.pack-icon-celular { --library-icon: url('../IMG/celular.png'); }
+
+.fa-desktop,
+.fa-computer,
+.pack-icon-computadora { --library-icon: url('../IMG/computadora.png'); }
+
+.fa-phone,
+.pack-icon-telefono { --library-icon: url('../IMG/telefono.png'); }
+
+.fa-globe,
+.pack-icon-mundo { --library-icon: url('../IMG/mundo.png'); }
+
+.fa-heart,
+.pack-icon-corazon { --library-icon: url('../IMG/corazon.png'); }
+
+/* Elementos neutros reutilizados */
+.fa-circle { --library-icon: url('../IMG/gancho.png'); }
+
+
+/* Respaldo para navegadores antiguos sin soporte de máscaras CSS. */
+@supports not ((-webkit-mask-image: url('')) or (mask-image: url(''))) {
+    .fa-solid::before,
+    .fa-regular::before,
+    .pack-icon::before {
+        background-color: transparent;
+        background-image: var(--library-icon);
+        background-repeat: no-repeat;
+        background-position: center;
+        background-size: contain;
+    }
+}

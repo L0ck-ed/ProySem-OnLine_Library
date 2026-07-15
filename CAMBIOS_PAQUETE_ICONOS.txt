@@ -1,0 +1,9 @@
+PAQUETE DE ICONOS PERSONALIZADO
+================================
+
+- Se copiaron los 32 iconos suministrados a Public/Assets/IMG.
+- Font Awesome fue retirado de las vistas principales.
+- Los iconos se renderizan mediante Public/Assets/CSS/icon-pack.css.
+- El sistema de máscaras permite que los PNG/WebP adopten el color de cada componente.
+- Se aplicaron a administración, portal regular, selector de acceso, logins y página pública.
+- No requiere cambios en la base de datos.

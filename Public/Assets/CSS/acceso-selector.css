@@ -92,14 +92,9 @@ a {
     box-shadow: 0 10px 24px rgba(143, 77, 35, 0.24);
 }
 
-.marca-icono svg {
+.marca-icono .pack-icon {
     width: 24px;
     height: 24px;
-    fill: none;
-    stroke: currentColor;
-    stroke-width: 1.8;
-    stroke-linecap: round;
-    stroke-linejoin: round;
 }
 
 .presentacion-acceso {
@@ -219,14 +214,9 @@ a {
     box-shadow: 0 15px 32px rgba(189, 107, 47, 0.2);
 }
 
-.icono-tipo-acceso svg {
+.icono-tipo-acceso .pack-icon {
     width: 36px;
     height: 36px;
-    fill: none;
-    stroke: currentColor;
-    stroke-width: 1.8;
-    stroke-linecap: round;
-    stroke-linejoin: round;
 }
 
 .tipo-cuenta {
@@ -321,14 +311,9 @@ a {
     box-shadow: 0 18px 34px rgba(56, 36, 23, 0.28);
 }
 
-.boton-acceso svg {
+.boton-acceso .pack-icon {
     width: 20px;
     height: 20px;
-    fill: none;
-    stroke: currentColor;
-    stroke-width: 2;
-    stroke-linecap: round;
-    stroke-linejoin: round;
 }
 
 .contenedor-toggle {
@@ -410,14 +395,9 @@ a {
     backdrop-filter: blur(8px);
 }
 
-.icono-toggle svg {
+.icono-toggle .pack-icon {
     width: 39px;
     height: 39px;
-    fill: none;
-    stroke: currentColor;
-    stroke-width: 1.7;
-    stroke-linecap: round;
-    stroke-linejoin: round;
 }
 
 .panel-toggle h2 {

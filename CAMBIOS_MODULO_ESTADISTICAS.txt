@@ -1,0 +1,33 @@
+MÓDULO DE ESTADÍSTICAS ADMINISTRATIVAS
+======================================
+
+Se agregó un módulo completo para cumplir la rúbrica:
+"Permitir generar estadísticas de los libros que más se usan por períodos,
+tanto para estudiantes como para docentes. Modo Administrativo."
+
+FUNCIONES INCLUIDAS
+-------------------
+- Filtro por mes actual, últimos 30 días, semestre actual, año actual o fechas personalizadas.
+- Separación entre estudiantes, docentes o ambas poblaciones.
+- Ranking configurable Top 5, 10, 15 o 20.
+- Resumen de usos, estudiantes, docentes y libros diferentes.
+- Gráfico de libros más usados.
+- Comparación visual entre estudiantes y docentes.
+- Evolución de los usos dentro del período.
+- Top 5 independiente para estudiantes y docentes.
+- Tabla detallada con participación porcentual.
+- Exportación del resultado a Excel.
+- Acceso protegido con los permisos reportes.ver y reportes.exportar_excel.
+
+CRITERIO DE CONTEO
+------------------
+Se cuentan como usos confirmados las reservas que actualmente están en estado:
+Prestado, Devuelto o Vencido. No se cuentan Pendiente, Reservado ni Cancelado.
+El período se calcula con la fecha de reserva, que es la fecha disponible en el
+modelo actual de la base de datos.
+
+BASE DE DATOS
+-------------
+No se requieren tablas ni columnas nuevas. El módulo usa los permisos de reportes
+que ya existen en la base de datos y que están asignados a Administrador y
+Bibliotecario.

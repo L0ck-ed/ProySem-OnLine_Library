@@ -15,44 +15,65 @@ $puedeEditar = Auth::tienePermiso('usuarios.editar');
 $puedeCambiarEstado = Auth::tienePermiso('usuarios.eliminar');
 ?>
 
-<div class="container-fluid">
+<div class="container-fluid admin-page admin-page-usuarios">
     <div class="row">
         <div class="col-md-2 p-0">
             <?php require_once __DIR__ . '/../Partials/sidebar.php'; ?>
         </div>
 
-        <div class="col-md-10 p-4">
-            <div class="d-flex justify-content-between align-items-center mb-4">
+        <main class="col-md-10 admin-main">
+            <div class="admin-page-header d-flex justify-content-between align-items-center gap-3">
                 <h2>Usuarios</h2>
 
-                <?php if ($puedeCrear): ?>
-                    <a
-                        href="<?= Config::baseUrl() ?>/usuarios/crear"
-                        class="btn btn-primary"
-                    >
-                        <i class="fa-solid fa-user-plus"></i>
-                        Nuevo Usuario
-                    </a>
-                <?php endif; ?>
+                <div class="d-flex gap-2 flex-wrap">
+                    <?php if ($puedeEditar): ?>
+                        <a
+                            href="<?= Config::url('usuarios/bloqueados') ?>"
+                            class="btn btn-outline-danger"
+                        >
+                            <i class="fa-solid fa-lock-open"></i>
+                            Cuentas bloqueadas
+                        </a>
+                    <?php endif; ?>
+
+                    <?php if ($puedeCrear): ?>
+                        <a
+                            href="<?= Config::url('usuarios/crear') ?>"
+                            class="btn btn-primary"
+                        >
+                            <i class="fa-solid fa-user-plus"></i>
+                            Nuevo Usuario
+                        </a>
+                    <?php endif; ?>
+                </div>
             </div>
 
             <?php if ($success): ?>
-                <div class="alert alert-success">
+                <div class="alert alert-success admin-alert">
                     <?= htmlspecialchars($success, ENT_QUOTES, 'UTF-8') ?>
                 </div>
             <?php endif; ?>
 
             <?php if ($error): ?>
-                <div class="alert alert-danger">
+                <div class="alert alert-danger admin-alert">
                     <?= htmlspecialchars($error, ENT_QUOTES, 'UTF-8') ?>
                 </div>
             <?php endif; ?>
 
-            <div class="card p-4">
+            <div class="card admin-list-card">
+                <div class="admin-card-heading">
+                    <div>
+                        <h2 class="admin-card-title mb-1">
+                            <i class="fa-solid fa-list-check"></i>
+                            Directorio de usuarios
+                        </h2>
+                        <p class="mb-0">Busca usuarios, revisa sus roles y administra su estado.</p>
+                    </div>
+                </div>
                 <form
                     method="GET"
                     action="<?= Config::baseUrl() ?>/usuarios"
-                    class="row mb-3"
+                    class="row g-3 admin-filter-form"
                 >
                     <div class="col-md-10">
                         <input
@@ -73,7 +94,7 @@ $puedeCambiarEstado = Auth::tienePermiso('usuarios.eliminar');
                 </form>
 
                 <div class="table-responsive">
-                    <table class="table table-hover align-middle">
+                    <table class="table table-hover align-middle admin-table">
                         <thead class="table-primary">
                             <tr>
                                 <th>ID</th>
@@ -207,7 +228,7 @@ $puedeCambiarEstado = Auth::tienePermiso('usuarios.eliminar');
                 </div>
 
                 <nav aria-label="Paginación de usuarios">
-                    <ul class="pagination">
+                    <ul class="pagination justify-content-center mb-0 admin-pagination">
                         <?php for ($i = 1; $i <= max(1, $paginas); $i++): ?>
                             <li class="page-item <?= $i === $pagina ? 'active' : '' ?>">
                                 <a
@@ -223,7 +244,7 @@ $puedeCambiarEstado = Auth::tienePermiso('usuarios.eliminar');
                     </ul>
                 </nav>
             </div>
-        </div>
+        </main>
     </div>
 </div>
 

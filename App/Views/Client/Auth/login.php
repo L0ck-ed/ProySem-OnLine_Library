@@ -27,13 +27,10 @@ $escapar = static function (mixed $valor): string {
 
         <link
             rel="stylesheet"
-            href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
-        >
-
-        <link
-            rel="stylesheet"
             href="<?= Config::assetsUrl() ?>/CSS/portal-login.css"
         >
+
+        <link rel="stylesheet" href="<?= Config::assetsUrl() ?>/CSS/icon-pack.css?v=icon-pack-1">
     </head>
 
     <body>
@@ -190,5 +187,6 @@ $escapar = static function (mixed $valor): string {
             src="<?= Config::assetsUrl() ?>/JavaScript/portal-login.js"
             defer
         ></script>
+        <?php require_once __DIR__ . '/../../Partials/audio.php'; ?>
     </body>
 </html>

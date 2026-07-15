@@ -515,6 +515,76 @@ class Usuario extends Model
         return $stmt->fetchAll();
     }
 
+    /**
+     * Devuelve todas las cuentas bloqueadas por exceso de intentos.
+     * Incluye usuarios administrativos, estudiantes y profesores porque
+     * todos comparten la tabla usuarios.
+     */
+    public function listarBloqueados(): array
+    {
+        $agregarRoles = Sql::esSqlServer($this->db)
+            ? "STRING_AGG(r.nombre, ', ')"
+            : "GROUP_CONCAT(r.nombre SEPARATOR ', ')";
+
+        $sql = "SELECT
+                    u.id_usuario,
+                    u.nombre,
+                    u.usuario,
+                    COALESCE(
+                        {$agregarRoles},
+                        'Sin rol'
+                    ) AS rol,
+                    u.estado,
+                    u.intentos_fallidos,
+                    u.ultimo_intento,
+                    u.bloqueado_hasta
+                FROM usuarios u
+                LEFT JOIN usuarios_roles ur
+                    ON ur.id_usuario = u.id_usuario
+                LEFT JOIN roles r
+                    ON r.id_rol = ur.id_rol
+                WHERE u.bloqueado = 1
+                GROUP BY
+                    u.id_usuario,
+                    u.nombre,
+                    u.usuario,
+                    u.estado,
+                    u.intentos_fallidos,
+                    u.ultimo_intento,
+                    u.bloqueado_hasta
+                ORDER BY
+                    u.ultimo_intento DESC,
+                    u.id_usuario DESC";
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute();
+
+        return $stmt->fetchAll();
+    }
+
+    /**
+     * Desbloquea una cuenta y reinicia el contador de intentos fallidos.
+     * No cambia el estado activo/inactivo ni la contraseña del usuario.
+     */
+    public function desbloquearUsuario(int $idUsuario): bool
+    {
+        $sql = "UPDATE usuarios
+                SET
+                    intentos_fallidos = 0,
+                    bloqueado = 0,
+                    bloqueado_hasta = NULL,
+                    fecha_actualizacion = CURRENT_TIMESTAMP
+                WHERE id_usuario = :id_usuario
+                  AND bloqueado = 1";
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([
+            ':id_usuario' => $idUsuario,
+        ]);
+
+        return $stmt->rowCount() > 0;
+    }
+
     public function cambiarEstado(int $idUsuario, int $estado): bool
     {
         if (!in_array($estado, [0, 1], true)) {

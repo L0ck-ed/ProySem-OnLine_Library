@@ -1,0 +1,23 @@
+MEJORAS DEL PORTAL DE USUARIOS REGULARES
+========================================
+
+Pantallas actualizadas:
+- Barra de navegación de estudiantes y profesores.
+- Inicio del portal.
+- Catálogo de libros.
+- Detalle de libro.
+- Mis préstamos e historial.
+- Solicitud de libros y seguimiento.
+- Mi perfil.
+
+Mejoras incluidas:
+- Ancho máximo de contenido para evitar diseños demasiado extendidos.
+- Cuadrículas automáticas que se adaptan a la cantidad de libros.
+- Uso de miniaturas y portadas reales cuando están disponibles.
+- Estados y disponibilidad más visibles.
+- Formularios, filtros, tarjetas, botones y mensajes vacíos unificados.
+- Navegación adaptable y nombre de usuario largo con recorte correcto.
+- Tablas de historial convertidas en tarjetas en pantallas pequeñas.
+- Diseño responsive para escritorio, tablet y móvil.
+- Limpieza de las plantillas generales header/footer.
+- No requiere cambios en la base de datos.

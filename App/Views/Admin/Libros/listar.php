@@ -29,14 +29,14 @@ $escapar = static function (mixed $valor): string {
 };
 ?>
 
-<div class="container-fluid">
+<div class="container-fluid admin-page admin-page-libros">
     <div class="row">
         <div class="col-md-2 p-0">
             <?php require_once __DIR__ . '/../Partials/sidebar.php'; ?>
         </div>
 
-        <div class="col-md-10 p-4">
-            <div class="d-flex justify-content-between align-items-center mb-4">
+        <main class="col-md-10 admin-main">
+            <div class="admin-page-header d-flex justify-content-between align-items-center gap-3">
                 <div>
                     <h2 class="mb-1">Libros</h2>
 
@@ -58,22 +58,31 @@ $escapar = static function (mixed $valor): string {
             </div>
 
             <?php if ($success): ?>
-                <div class="alert alert-success">
+                <div class="alert alert-success admin-alert">
                     <?= $escapar($success) ?>
                 </div>
             <?php endif; ?>
 
             <?php if ($error): ?>
-                <div class="alert alert-danger">
+                <div class="alert alert-danger admin-alert">
                     <?= $escapar($error) ?>
                 </div>
             <?php endif; ?>
 
-            <div class="card p-4">
+            <div class="card admin-list-card">
+                <div class="admin-card-heading">
+                    <div>
+                        <h2 class="admin-card-title mb-1">
+                            <i class="fa-solid fa-list-check"></i>
+                            Inventario de libros
+                        </h2>
+                        <p class="mb-0">Busca títulos, revisa existencias y administra el catálogo.</p>
+                    </div>
+                </div>
                 <form
                     method="GET"
                     action="<?= Config::url('libros') ?>"
-                    class="row g-2 mb-4"
+                    class="row g-3 admin-filter-form"
                 >
                     <div class="col-md-10">
                         <input
@@ -94,7 +103,7 @@ $escapar = static function (mixed $valor): string {
                 </form>
 
                 <div class="table-responsive">
-                    <table class="table table-hover align-middle">
+                    <table class="table table-hover align-middle admin-table">
                         <thead class="table-primary">
                             <tr>
                                 <th>Portada</th>
@@ -283,7 +292,7 @@ $escapar = static function (mixed $valor): string {
 
                 <?php if ($totalPaginas > 1): ?>
                     <nav aria-label="Paginación de libros">
-                        <ul class="pagination justify-content-center mb-0">
+                        <ul class="pagination justify-content-center mb-0 admin-pagination">
                             <?php for ($i = 1; $i <= $totalPaginas; $i++): ?>
                                 <li
                                     class="page-item <?= $i === (int) $pagina
@@ -307,7 +316,7 @@ $escapar = static function (mixed $valor): string {
                     </nav>
                 <?php endif; ?>
             </div>
-        </div>
+        </main>
     </div>
 </div>
 

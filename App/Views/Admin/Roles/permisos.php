@@ -16,14 +16,14 @@ foreach ($permisos as $permiso) {
 }
 ?>
 
-<div class="container-fluid">
+<div class="container-fluid admin-page admin-page-roles">
     <div class="row">
         <div class="col-md-2 p-0">
             <?php require_once __DIR__ . '/../Partials/sidebar.php'; ?>
         </div>
 
-        <div class="col-md-10 p-4">
-            <div class="d-flex justify-content-between align-items-center mb-4">
+        <main class="col-md-10 admin-main">
+            <div class="admin-page-header d-flex justify-content-between align-items-center gap-3">
                 <div>
                     <h2>Gestionar permisos</h2>
 
@@ -45,7 +45,7 @@ foreach ($permisos as $permiso) {
             </div>
 
             <?php if ($error): ?>
-                <div class="alert alert-danger">
+                <div class="alert alert-danger admin-alert">
                     <?= htmlspecialchars($error, ENT_QUOTES, 'UTF-8') ?>
                 </div>
             <?php endif; ?>
@@ -61,14 +61,14 @@ foreach ($permisos as $permiso) {
                 >
 
                 <?php foreach ($permisosPorModulo as $modulo => $permisosModulo): ?>
-                    <div class="card mb-4">
-                        <div class="card-header bg-primary text-white">
+                    <div class="card admin-form-card role-permission-card mb-4">
+                        <div class="admin-card-heading">
                             <h5 class="mb-0">
                                 <?= htmlspecialchars(ucfirst($modulo), ENT_QUOTES, 'UTF-8') ?>
                             </h5>
                         </div>
 
-                        <div class="card-body">
+                        <div class="admin-form-body">
                             <div class="row">
                                 <?php foreach ($permisosModulo as $permiso): ?>
                                     <?php
@@ -77,7 +77,7 @@ foreach ($permisos as $permiso) {
                                     ?>
 
                                     <div class="col-md-6 col-lg-4 mb-3">
-                                        <div class="form-check border rounded p-3 h-100">
+                                        <div class="form-check role-permission-option h-100">
                                             <input
                                                 type="checkbox"
                                                 name="id_permisos[]"
@@ -118,7 +118,7 @@ foreach ($permisos as $permiso) {
                     </div>
                 <?php endforeach; ?>
 
-                <div class="d-flex gap-2">
+                <div class="admin-form-actions d-flex justify-content-end gap-2">
                     <button type="submit" class="btn btn-success">
                         <i class="fa-solid fa-floppy-disk"></i>
                         Guardar permisos
@@ -132,7 +132,7 @@ foreach ($permisos as $permiso) {
                     </a>
                 </div>
             </form>
-        </div>
+        </main>
     </div>
 </div>
 

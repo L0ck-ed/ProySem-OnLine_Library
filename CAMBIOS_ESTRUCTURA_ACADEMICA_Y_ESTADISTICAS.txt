@@ -1,0 +1,94 @@
+PROYECTO BIBLIOTECA ONLINE
+ACTUALIZACIÓN: ESTRUCTURA ACADÉMICA Y ESTADÍSTICAS
+=================================================
+
+1. PASO OBLIGATORIO EN LA BASE DE DATOS
+----------------------------------------
+Si ya tienes BibliotecaDigitalDB creada, ejecuta una sola vez en SQL Server Management Studio:
+
+    DataBase/actualizacion_estructura_academica.sql
+
+El script es idempotente: puede ejecutarse nuevamente sin duplicar el catálogo ni los permisos.
+No elimina estudiantes, profesores, carreras, reservas ni préstamos existentes.
+Precarga un catálogo base editable de 6 facultades, 30 departamentos y 65 carreras/programas técnicos.
+
+2. NUEVO MÓDULO: ESTRUCTURA ACADÉMICA
+-------------------------------------
+Ruta administrativa:
+
+    /estructura-academica
+
+Incluye:
+- Listado conjunto de facultades, departamentos y carreras.
+- Búsqueda general.
+- Crear, editar, activar, desactivar y eliminar.
+- Relación Facultad > Departamento > Carrera.
+- Conteo de departamentos, carreras, profesores y estudiantes relacionados.
+- Protección de integridad: no permite eliminar registros que ya tienen dependencias.
+- Validación para impedir carreras o departamentos activos bajo una facultad inactiva.
+
+Se incluyen las seis facultades oficiales usadas por la Universidad Tecnológica de Panamá:
+- Facultad de Ciencias y Tecnología.
+- Facultad de Ingeniería Civil.
+- Facultad de Ingeniería Eléctrica.
+- Facultad de Ingeniería Industrial.
+- Facultad de Ingeniería Mecánica.
+- Facultad de Ingeniería de Sistemas Computacionales.
+
+También se precargan los departamentos y la oferta de pregrado/técnica publicada en los sitios oficiales de las seis facultades. Los registros existentes no se sobrescriben: si una carrera ya existe, solo se completa su facultad cuando todavía no la tenía asignada.
+
+Las carreras quedan relacionadas con su facultad. El departamento responsable de cada carrera es editable y puede asignarse desde el módulo, porque esa asociación puede variar según la organización académica adoptada por la Universidad.
+
+3. ESTADÍSTICAS ACADÉMICAS
+--------------------------
+El módulo /estadisticas ahora permite filtrar por:
+- Período predefinido o fechas personalizadas.
+- Estudiantes, docentes o ambos.
+- Facultad.
+- Carrera estudiantil.
+- Intervalo diario, semanal, mensual, anual o automático.
+- Métrica de uso confirmado o demanda solicitada.
+
+Uso confirmado:
+- Prestado.
+- Devuelto.
+- Vencido.
+
+Demanda solicitada:
+- Pendiente.
+- Reservado.
+- Prestado.
+- Devuelto.
+- Vencido.
+- No cuenta Cancelado.
+
+Nuevos análisis:
+- Demanda total por facultad.
+- Libros solicitados por carrera o departamento docente.
+- Evolución por intervalos para detectar picos de interés.
+- Facultad y unidad académica con mayor demanda.
+- Tabla Facultad > Carrera/Departamento > Libro > período pico.
+- Exportación a Excel con el ranking general y el detalle académico.
+
+Ejemplo de lectura:
+El administrador puede seleccionar Facultad de Ingeniería Mecánica, elegir un semestre y ver si sus carreras o departamentos concentran solicitudes de libros de cálculo, en qué semanas o meses ocurre el pico y cuáles títulos tienen mayor demanda.
+
+4. PERMISOS
+-----------
+Se agregan:
+- estructura.ver
+- estructura.crear
+- estructura.editar
+- estructura.eliminar
+
+El script los asigna a Administrador y Bibliotecario.
+
+5. ORDEN RECOMENDADO DE CARGA
+-----------------------------
+1. Ejecutar la actualización SQL para cargar el catálogo base.
+2. Revisar o actualizar facultades, departamentos y carreras.
+3. Asignar el departamento responsable a las carreras que lo requieran.
+4. Asignar carrera a estudiantes.
+5. Asignar departamento a profesores.
+6. Registrar reservas/préstamos.
+7. Consultar estadísticas.

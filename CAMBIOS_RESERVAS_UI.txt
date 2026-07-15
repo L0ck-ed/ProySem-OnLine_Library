@@ -1,0 +1,26 @@
+MEJORAS EN RESERVAS Y PRÉSTAMOS
+================================
+
+Archivos modificados:
+- App/Views/Admin/Reservas/listar.php
+- App/Views/Partials/header.php
+- Public/Assets/CSS/style.css
+
+Cambios principales:
+- Encabezado más claro con contador de registros y acceso al reporte.
+- Panel de filtros reorganizado y adaptable a móviles.
+- Indicador de filtros activos.
+- Tabla con mejor jerarquía visual para usuarios, libros, fechas y estados.
+- Fechas mostradas en formato día/mes/año.
+- Estados con colores propios y texto legible.
+- Botones de acción compactos, con iconos y confirmaciones.
+- Flujo de acciones corregido:
+  Pendiente: Aprobar o cancelar.
+  Reservado: Entregar o cancelar.
+  Prestado/Vencido: Devolver.
+  Devuelto/Cancelado: Sin acciones.
+- Estado vacío mejorado cuando no hay resultados.
+- Paginación con botones anterior y siguiente.
+- Versión del CSS actualizada para evitar que el navegador conserve estilos antiguos.
+
+No requiere cambios en la base de datos.

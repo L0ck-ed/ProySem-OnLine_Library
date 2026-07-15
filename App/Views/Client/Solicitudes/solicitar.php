@@ -1,108 +1,187 @@
 <?php
 
-$nombreEstudiante = $nombreEstudiante ?? 'Estudiante';
-$cipSesion = $cipSesion ?? '';
+use App\Config\Config;
 
-$areas = $areas ?? [];
-$misSolicitudes = $misSolicitudes ?? [];
-
+$areas = is_array($areas ?? null) ? $areas : [];
+$misSolicitudes = is_array($misSolicitudes ?? null) ? $misSolicitudes : [];
 $errorSolicitud = $errorSolicitud ?? null;
 $exitoSolicitud = $exitoSolicitud ?? null;
 $tituloAnterior = $tituloAnterior ?? '';
 $areaAnterior = $areaAnterior ?? '';
 $descripcionAnterior = $descripcionAnterior ?? '';
 
-function badgeEstadoSolicitud(string $estado): string
-{
+$escapar = static function (mixed $valor): string {
+    return htmlspecialchars((string) ($valor ?? ''), ENT_QUOTES, 'UTF-8');
+};
+
+$claseEstadoSolicitud = static function (string $estado): string {
     return match ($estado) {
-        'Aprobado'  => 'bg-success',
-        'Rechazado' => 'badge-existencias-agotado',
-        'Revisado'  => 'badge-categoria',
-        default     => 'bg-secondary',
+        'Aprobado' => 'status-returned',
+        'Rechazado' => 'status-overdue',
+        'Revisado' => 'status-reserved',
+        'Pendiente' => 'status-pending',
+        default => 'status-neutral',
     };
-}
+};
+
+$iconoEstadoSolicitud = static function (string $estado): string {
+    return match ($estado) {
+        'Aprobado' => 'fa-solid fa-circle-check',
+        'Rechazado' => 'fa-solid fa-circle-xmark',
+        'Revisado' => 'fa-solid fa-eye',
+        'Pendiente' => 'fa-solid fa-clock',
+        default => 'fa-solid fa-circle-info',
+    };
+};
 
 require_once __DIR__ . '/../../Partials/header.php';
 require_once __DIR__ . '/../Partials/navbar.php';
-
 ?>
 
-<div class="container-fluid py-4 px-4">
+<main class="client-page">
+    <div class="client-page-inner">
+        <header class="client-page-header">
+            <div class="client-page-title-wrap">
+                <span class="client-page-title-icon"><i class="fa-solid fa-circle-plus"></i></span>
+                <div>
+                    <span class="client-section-kicker">Ayúdanos a crecer</span>
+                    <h1>Solicitar un libro</h1>
+                    <p>Cuéntanos qué material necesitas y la administración revisará tu petición.</p>
+                </div>
+            </div>
 
-    <h2><i class="fa-solid fa-circle-plus"></i> Solicitar un libro</h2>
-    <p class="mb-4">¿No encontraste el libro que necesitas en el catálogo? Cuéntanos qué buscas y la administración revisará tu solicitud.</p>
+            <a href="<?= Config::url('portal/catalogo') ?>" class="btn btn-secondary client-header-action">
+                <i class="fa-solid fa-book-open"></i>
+                Revisar catálogo
+            </a>
+        </header>
 
-    <?php if ($errorSolicitud): ?>
-        <div class="alert alert-danger"><i class="fa-solid fa-circle-exclamation"></i> <?= htmlspecialchars($errorSolicitud) ?></div>
-    <?php endif; ?>
+        <?php if ($errorSolicitud): ?>
+            <div class="alert alert-danger client-alert">
+                <i class="fa-solid fa-circle-exclamation"></i>
+                <?= $escapar($errorSolicitud) ?>
+            </div>
+        <?php endif; ?>
 
-    <?php if ($exitoSolicitud): ?>
-        <div class="alert alert-success"><i class="fa-solid fa-circle-check"></i> <?= htmlspecialchars($exitoSolicitud) ?></div>
-    <?php endif; ?>
+        <?php if ($exitoSolicitud): ?>
+            <div class="alert alert-success client-alert">
+                <i class="fa-solid fa-circle-check"></i>
+                <?= $escapar($exitoSolicitud) ?>
+            </div>
+        <?php endif; ?>
 
-    <div class="row g-4">
-        <div class="col-lg-5">
-            <div class="card p-4">
-                <form action="<?= App\Config\Config::url('portal/solicitudes') ?>" method="POST">
-                    <div class="mb-3">
-                        <label>Título del libro</label>
-                        <input type="text" name="titulo_libro" class="form-control" value="<?= htmlspecialchars($tituloAnterior) ?>" placeholder="Ej: Introduction to Algorithms" required>
+        <div class="client-request-layout">
+            <section class="client-request-form-card">
+                <div class="client-card-heading">
+                    <span><i class="fa-solid fa-paper-plane"></i></span>
+                    <div>
+                        <h2>Nueva solicitud</h2>
+                        <p>Completa los datos principales del libro.</p>
+                    </div>
+                </div>
+
+                <form action="<?= Config::url('portal/solicitudes') ?>" method="POST" class="client-request-form">
+                    <div>
+                        <label for="titulo_libro">Título del libro</label>
+                        <div class="client-input-icon">
+                            <i class="fa-solid fa-book"></i>
+                            <input
+                                type="text"
+                                name="titulo_libro"
+                                id="titulo_libro"
+                                class="form-control"
+                                value="<?= $escapar($tituloAnterior) ?>"
+                                placeholder="Ej: Introduction to Algorithms"
+                                minlength="3"
+                                required
+                            >
+                        </div>
+                        <small>Escribe el nombre más completo que conozcas.</small>
                     </div>
 
-                    <div class="mb-3">
-                        <label>Área</label>
-                        <select name="area" class="form-select" required>
-                            <option value="">Selecciona un área</option>
-                            <?php foreach ($areas as $area): ?>
-                                <option value="<?= htmlspecialchars($area) ?>" <?= $areaAnterior === $area ? 'selected' : '' ?>>
-                                    <?= htmlspecialchars($area) ?>
-                                </option>
-                            <?php endforeach; ?>
-                        </select>
+                    <div>
+                        <label for="area">Área académica</label>
+                        <div class="client-input-icon">
+                            <i class="fa-solid fa-shapes"></i>
+                            <select name="area" id="area" class="form-select" required>
+                                <option value="">Selecciona un área</option>
+                                <?php foreach ($areas as $area): ?>
+                                    <option value="<?= $escapar($area) ?>" <?= $areaAnterior === $area ? 'selected' : '' ?>>
+                                        <?= $escapar($area) ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
                     </div>
 
-                    <div class="mb-4">
-                        <label>Descripción o motivo (opcional)</label>
-                        <textarea name="descripcion" class="form-control" rows="4" placeholder="Cuéntanos para qué lo necesitas o dónde lo viste"><?= htmlspecialchars($descripcionAnterior) ?></textarea>
+                    <div>
+                        <label for="descripcion">Descripción o motivo <span>(opcional)</span></label>
+                        <textarea
+                            name="descripcion"
+                            id="descripcion"
+                            class="form-control client-textarea"
+                            rows="5"
+                            placeholder="Cuéntanos para qué lo necesitas, autor, edición o dónde lo viste..."
+                        ><?= $escapar($descripcionAnterior) ?></textarea>
                     </div>
 
-                    <button class="btn btn-primary w-100" type="submit">
-                        <i class="fa-solid fa-paper-plane"></i> Enviar solicitud
+                    <button class="btn btn-primary client-request-submit" type="submit">
+                        <i class="fa-solid fa-paper-plane"></i>
+                        Enviar solicitud
                     </button>
                 </form>
-            </div>
-        </div>
 
-        <div class="col-lg-7">
-            <h5 class="mb-3">Mis solicitudes</h5>
-            <div class="table-responsive">
-                <table class="table table-hover align-middle">
-                    <thead>
-                        <tr>
-                            <th>Título</th>
-                            <th>Área</th>
-                            <th>Fecha</th>
-                            <th>Estado</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php if (empty($misSolicitudes)): ?>
-                            <tr><td colspan="4" class="text-center text-muted py-4">Aún no has enviado solicitudes.</td></tr>
-                        <?php endif; ?>
-                        <?php foreach ($misSolicitudes as $s): ?>
-                            <tr>
-                                <td class="fw-bold"><?= htmlspecialchars($s['titulo']) ?></td>
-                                <td><?= htmlspecialchars($s['area']) ?></td>
-                                <td><?= htmlspecialchars($s['fecha']) ?></td>
-                                <td><span class="badge <?= badgeEstadoSolicitud($s['estado']) ?>"><?= htmlspecialchars($s['estado']) ?></span></td>
-                            </tr>
+                <div class="client-request-tip">
+                    <i class="fa-solid fa-lightbulb"></i>
+                    <p><strong>Consejo:</strong> agregar autor, edición o ISBN ayuda a identificar el libro con mayor precisión.</p>
+                </div>
+            </section>
+
+            <section class="client-request-history-card">
+                <div class="client-card-heading client-card-heading-between">
+                    <div class="client-card-heading-copy">
+                        <span><i class="fa-solid fa-list-check"></i></span>
+                        <div>
+                            <h2>Mis solicitudes</h2>
+                            <p>Seguimiento de las peticiones que has enviado.</p>
+                        </div>
+                    </div>
+                    <strong class="client-count-badge"><?= count($misSolicitudes) ?></strong>
+                </div>
+
+                <?php if (!empty($misSolicitudes)): ?>
+                    <div class="client-request-list">
+                        <?php foreach ($misSolicitudes as $solicitud): ?>
+                            <?php $estado = (string) ($solicitud['estado'] ?? 'Pendiente'); ?>
+                            <article class="client-request-item">
+                                <span class="client-request-item-icon"><i class="fa-solid fa-book"></i></span>
+                                <div class="client-request-item-main">
+                                    <div>
+                                        <h3><?= $escapar($solicitud['titulo'] ?? 'Libro sin título') ?></h3>
+                                        <p><i class="fa-solid fa-tag"></i> <?= $escapar($solicitud['area'] ?? 'Sin área') ?></p>
+                                    </div>
+                                    <span class="client-status-pill <?= $claseEstadoSolicitud($estado) ?>">
+                                        <i class="<?= $iconoEstadoSolicitud($estado) ?>"></i>
+                                        <?= $escapar($estado) ?>
+                                    </span>
+                                </div>
+                                <time>
+                                    <i class="fa-regular fa-calendar"></i>
+                                    <?= $escapar($solicitud['fecha'] ?? 'Fecha no registrada') ?>
+                                </time>
+                            </article>
                         <?php endforeach; ?>
-                    </tbody>
-                </table>
-            </div>
+                    </div>
+                <?php else: ?>
+                    <div class="client-empty-state compact">
+                        <span><i class="fa-solid fa-inbox"></i></span>
+                        <h2>Aún no has enviado solicitudes</h2>
+                        <p>Completa el formulario y podrás seguir su estado desde aquí.</p>
+                    </div>
+                <?php endif; ?>
+            </section>
         </div>
     </div>
-
-</div>
+</main>
 
 <?php require_once __DIR__ . '/../../Partials/footer.php'; ?>

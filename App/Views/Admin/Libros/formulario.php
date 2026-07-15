@@ -47,14 +47,14 @@ $accion = $esEdicion
     : Config::url('libros/guardar');
 ?>
 
-<div class="container-fluid">
+<div class="container-fluid admin-page admin-page-libros">
     <div class="row">
         <div class="col-md-2 p-0">
             <?php require_once __DIR__ . '/../Partials/sidebar.php'; ?>
         </div>
 
-        <div class="col-md-10 p-4">
-            <div class="d-flex justify-content-between align-items-center mb-4">
+        <main class="col-md-10 admin-main">
+            <div class="admin-page-header d-flex justify-content-between align-items-center gap-3">
                 <div>
                     <h2 class="mb-1">
                         <?= $escapar($tituloPagina) ?>
@@ -75,7 +75,7 @@ $accion = $esEdicion
             </div>
 
             <?php if ($error): ?>
-                <div class="alert alert-danger">
+                <div class="alert alert-danger admin-alert">
                     <?= $escapar($error) ?>
                 </div>
             <?php endif; ?>
@@ -93,7 +93,7 @@ $accion = $esEdicion
                     >
                 <?php endif; ?>
 
-                <div class="card p-4 mb-4">
+                <div class="card admin-form-card mb-4">
                     <h5 class="mb-3">Información bibliográfica</h5>
 
                     <div class="row">
@@ -278,7 +278,7 @@ $accion = $esEdicion
                     </div>
                 </div>
 
-                <div class="card p-4 mb-4">
+                <div class="card admin-form-card mb-4">
                     <h5 class="mb-3">Existencias y temas</h5>
 
                     <div class="row">
@@ -388,7 +388,7 @@ $accion = $esEdicion
                     </div>
                 </div>
 
-                <div class="card p-4 mb-4">
+                <div class="card admin-form-card mb-4">
                     <h5 class="mb-3">Portada del libro</h5>
 
                     <div class="row align-items-center">
@@ -435,7 +435,7 @@ $accion = $esEdicion
                     </div>
                 </div>
 
-                <div class="d-flex justify-content-end gap-2">
+                <div class="admin-form-actions d-flex justify-content-end gap-2">
                     <a
                         href="<?= Config::url('libros') ?>"
                         class="btn btn-secondary"
@@ -456,7 +456,7 @@ $accion = $esEdicion
                     </button>
                 </div>
             </form>
-        </div>
+        </main>
     </div>
 </div>
 

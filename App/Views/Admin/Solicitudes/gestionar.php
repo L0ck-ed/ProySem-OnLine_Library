@@ -42,15 +42,15 @@ $cipSolicitante = $solicitud['cip_estudiante'] ?? ($solicitud['cip_profesor'] ??
 $tipoUsuario = $solicitud['tipo_usuario'] ?? 'Usuario';
 ?>
 
-<div class="container-fluid">
+<div class="container-fluid admin-page admin-page-solicitudes">
     <div class="row">
         <div class="col-md-2 p-0">
             <?php require_once __DIR__ . '/../Partials/sidebar.php'; ?>
         </div>
 
-        <div class="col-md-10 p-4">
+        <main class="col-md-10 admin-main">
             <div
-                class="d-flex justify-content-between align-items-center mb-4"
+                class="admin-page-header d-flex justify-content-between align-items-center gap-3"
             >
                 <div>
                     <h2 class="mb-1">
@@ -73,7 +73,7 @@ $tipoUsuario = $solicitud['tipo_usuario'] ?? 'Usuario';
             </div>
 
             <?php if ($error): ?>
-                <div class="alert alert-danger">
+                <div class="alert alert-danger admin-alert">
                     <i class="fa-solid fa-circle-exclamation"></i>
 
                     <?= $escapar($error) ?>
@@ -82,7 +82,7 @@ $tipoUsuario = $solicitud['tipo_usuario'] ?? 'Usuario';
 
             <div class="row g-4">
                 <div class="col-lg-6">
-                    <div class="card p-4 h-100">
+                    <div class="card admin-form-card h-100">
                         <h5 class="mb-4">
                             <i class="fa-solid fa-book-open-reader"></i>
                             Información de la solicitud
@@ -219,7 +219,7 @@ $tipoUsuario = $solicitud['tipo_usuario'] ?? 'Usuario';
                     <form
                         method="POST"
                         action="<?= Config::url('solicitudes/actualizar') ?>"
-                        class="card p-4 h-100"
+                        class="card admin-form-card h-100"
                     >
                         <input
                             type="hidden"
@@ -284,7 +284,7 @@ $tipoUsuario = $solicitud['tipo_usuario'] ?? 'Usuario';
                             </div>
                         </div>
 
-                        <div class="alert alert-info">
+                        <div class="alert alert-info admin-alert">
                             <strong>Estados disponibles:</strong>
 
                             <div class="mt-2">
@@ -316,7 +316,7 @@ $tipoUsuario = $solicitud['tipo_usuario'] ?? 'Usuario';
                         </div>
 
                         <div
-                            class="d-flex justify-content-end gap-2 mt-auto"
+                            class="admin-form-actions d-flex justify-content-end gap-2 mt-auto"
                         >
                             <a
                                 href="<?= Config::url('solicitudes') ?>"
@@ -336,7 +336,7 @@ $tipoUsuario = $solicitud['tipo_usuario'] ?? 'Usuario';
                     </form>
                 </div>
             </div>
-        </div>
+        </main>
     </div>
 </div>
 

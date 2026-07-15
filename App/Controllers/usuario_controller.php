@@ -8,6 +8,7 @@ use App\Models\Usuario;
 use App\Helpers\Sanitizer;
 use App\Helpers\Validator;
 use App\Helpers\Session;
+use App\Helpers\Logger;
 use App\Config\Config;
 
 class UsuarioController extends Controller
@@ -306,6 +307,76 @@ class UsuarioController extends Controller
             header('Location: ' . $urlEditar);
             exit();
         }
+    }
+
+    public function bloqueados(): void
+    {
+        Auth::check();
+        Auth::exigirPermiso('usuarios.editar');
+
+        $usuarioModel = new Usuario();
+
+        $this->view('Admin/User/bloqueados', [
+            'usuariosBloqueados' => $usuarioModel->listarBloqueados(),
+        ]);
+    }
+
+    public function desbloquear(): void
+    {
+        Auth::check();
+        Auth::exigirPermiso('usuarios.editar');
+
+        $idUsuario = filter_input(INPUT_POST, 'id_usuario', FILTER_VALIDATE_INT);
+
+        if (!$idUsuario) {
+            Session::flash('error', 'La cuenta seleccionada no es válida.');
+
+            header('Location: ' . Config::url('usuarios/bloqueados'));
+            exit();
+        }
+
+        $usuarioModel = new Usuario();
+        $usuario = $usuarioModel->buscarPorId((int) $idUsuario);
+
+        if (!$usuario) {
+            Session::flash('error', 'La cuenta seleccionada no existe.');
+
+            header('Location: ' . Config::url('usuarios/bloqueados'));
+            exit();
+        }
+
+        if ((int) ($usuario['bloqueado'] ?? 0) !== 1) {
+            Session::flash('error', 'La cuenta ya se encuentra desbloqueada.');
+
+            header('Location: ' . Config::url('usuarios/bloqueados'));
+            exit();
+        }
+
+        try {
+            if (!$usuarioModel->desbloquearUsuario((int) $idUsuario)) {
+                throw new \RuntimeException('La base de datos no modificó la cuenta.');
+            }
+
+            Logger::login(
+                (string) $usuario['usuario'],
+                'desbloqueado_admin',
+                (int) $idUsuario,
+                'Cuenta desbloqueada por el administrador con ID ' .
+                    (int) Session::get('id_usuario'),
+            );
+
+            Session::flash(
+                'success',
+                'La cuenta de ' . $usuario['nombre'] . ' fue desbloqueada correctamente.',
+            );
+        } catch (\Throwable $e) {
+            error_log('Error al desbloquear usuario: ' . $e->getMessage());
+
+            Session::flash('error', 'No se pudo desbloquear la cuenta seleccionada.');
+        }
+
+        header('Location: ' . Config::url('usuarios/bloqueados'));
+        exit();
     }
 
     public function cambiarEstado(): void

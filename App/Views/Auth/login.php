@@ -45,12 +45,10 @@ $escapar = static function (mixed $valor): string {
         >
         <link
             rel="stylesheet"
-            href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css"
-        >
-        <link
-            rel="stylesheet"
             href="<?= Config::asset('CSS/admin-login.css') ?>"
         >
+
+        <link rel="stylesheet" href="<?= Config::assetsUrl() ?>/CSS/icon-pack.css?v=icon-pack-1">
     </head>
 
     <body class="admin-login-body">
@@ -180,5 +178,6 @@ $escapar = static function (mixed $valor): string {
             src="<?= Config::asset('JavaScript/admin-login.js') ?>"
             defer
         ></script>
+        <?php require_once __DIR__ . '/../Partials/audio.php'; ?>
     </body>
 </html>

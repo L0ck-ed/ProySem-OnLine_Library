@@ -7,6 +7,7 @@ use App\Helpers\Logger;
 use App\Helpers\Session;
 use App\Helpers\Validator;
 use App\Models\Usuario;
+use App\Middleware\Auth;
 
 class AuthService
 {
@@ -22,6 +23,9 @@ class AuthService
     public function login(): void
     {
         Session::start();
+
+        // Evita reutilizar una sesión administrativa anterior en el mismo navegador.
+        Auth::limpiarSesionAdministrativa();
 
         $usuario = trim($_POST['usuario'] ?? '');
         $password = (string) ($_POST['password'] ?? '');
@@ -135,17 +139,6 @@ class AuthService
             $this->redirigirLogin();
         }
 
-        $this->usuarioModel->actualizarLogin($idUsuario);
-
-        Logger::login(
-            $usuario,
-            'correcto',
-            $idUsuario,
-            'Inicio de sesión exitoso.',
-        );
-
-        session_regenerate_id(true);
-
         $roles = $this->usuarioModel->obtenerNombresRolesUsuario($idUsuario);
 
         if (empty($roles)) {
@@ -160,8 +153,38 @@ class AuthService
             $this->redirigirLogin();
         }
 
+        if (!Auth::rolesPermitenPanel($roles)) {
+            Logger::login(
+                $usuario,
+                'acceso_admin_denegado',
+                $idUsuario,
+                'Credenciales válidas, pero la cuenta no posee un rol administrativo.',
+            );
+
+            Session::flash(
+                'error',
+                'Tu cuenta no tiene acceso al panel administrativo. Usa el acceso regular.',
+            );
+
+            $this->redirigirLogin();
+        }
+
+        $this->usuarioModel->actualizarLogin($idUsuario);
+
+        Logger::login(
+            $usuario,
+            'correcto',
+            $idUsuario,
+            'Inicio de sesión administrativo exitoso.',
+        );
+
+        $this->limpiarSesionPortal();
+        session_regenerate_id(true);
+
         $permisos = $this->usuarioModel->obtenerPermisosUsuario($idUsuario);
 
+        Session::set('admin_autenticado', true);
+        Session::set('tipo_sesion', 'admin');
         Session::set('id_usuario', $idUsuario);
         Session::set('usuario', $datos['usuario']);
         Session::set('nombre', $datos['nombre']);
@@ -179,24 +202,36 @@ class AuthService
     {
         Session::start();
 
-        $clavesAdministrativas = [
-            'id_usuario',
-            'usuario',
-            'nombre',
-            'roles',
-            'permisos',
-            'rol',
-            'old_usuario',
-        ];
-
-        foreach ($clavesAdministrativas as $clave) {
-            unset($_SESSION[$clave]);
-        }
-
-        session_regenerate_id(true);
+        Auth::limpiarSesionAdministrativa(true);
 
         header('Location: ' . Config::url());
         exit();
+    }
+
+    private function limpiarSesionPortal(): void
+    {
+        $clavesPortal = [
+            'portal_autenticado',
+            'portal_id_usuario',
+            'portal_tipo_usuario',
+            'portal_nombre',
+            'portal_cip',
+            'portal_permisos',
+            'permisos_portal',
+            'id_estudiante',
+            'id_profesor',
+            'nombre_estudiante',
+            'cip',
+            'error_permiso',
+        ];
+
+        foreach ($clavesPortal as $clave) {
+            unset($_SESSION[$clave]);
+        }
+
+        if (($_SESSION['tipo_sesion'] ?? null) === 'portal') {
+            unset($_SESSION['tipo_sesion']);
+        }
     }
 
     private function redirigirLogin(): never

@@ -1,0 +1,34 @@
+INTEGRACIÓN DE MÚSICA Y EFECTOS DE SONIDO
+=========================================
+
+Archivos agregados:
+- Public/Assets/JavaScript/tocaDiscos.js
+- Public/Assets/JavaScript/WalkMan.js
+- App/Views/Partials/audio.php
+- Public/Assets/MP3/*.mp3
+
+Música:
+- Admin-Home-Music.mp3 se reproduce en /dashboard.
+- Regular-Home-Music.mp3 se reproduce en /portal/inicio.
+- El navegador puede exigir el primer clic del usuario para iniciar la música.
+- La música usa volumen bajo, bucle, entrada/salida gradual y reanuda su posición.
+- La preferencia de música y el volumen quedan guardados en localStorage.
+
+Efectos:
+- click.mp3: botones y enlaces generales.
+- home.mp3: enlaces de inicio/dashboard.
+- perfil-usuario.mp3: enlaces de perfil.
+- ajustes.mp3: filtros, roles, permisos y ajustes.
+- popUp.mp3: detalles, modales, menús y avisos correctos.
+- error.mp3: errores, validaciones y acciones destructivas.
+- cargando.mp3: formularios válidos enviados.
+- Carga-Datosmultiple.mp3: reportes, Excel y carga de datos.
+
+Controles:
+- Botón flotante de Música en las dos pantallas que tienen pista.
+- Botón flotante de Sonidos en todas las pantallas.
+- Deslizadores de volumen en escritorio.
+- Los controles se compactan en celulares.
+- Las preferencias quedan guardadas para próximas visitas.
+
+No se realizaron cambios en la base de datos.

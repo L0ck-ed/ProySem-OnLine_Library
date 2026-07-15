@@ -95,7 +95,9 @@ use App\Controllers\UsuarioController;
 use App\Controllers\UsuarioRegularAuthController;
 
 use App\Controllers\Admin\CategoriaController;
+use App\Controllers\Admin\EstadisticaController;
 use App\Controllers\Admin\EstudianteController;
+use App\Controllers\Admin\EstructuraAcademicaController;
 use App\Controllers\Admin\LibroController;
 use App\Controllers\Admin\ProfesorController;
 use App\Controllers\Admin\ReservaController;
@@ -130,6 +132,26 @@ $router->get('/logout', [LoginController::class, 'logout']);
 $router->get('/dashboard', [DashboardController::class, 'index']);
 
 /* ==================================================
+   ESTADÍSTICAS ADMINISTRATIVAS
+   ================================================== */
+
+$router->get('/estadisticas', [EstadisticaController::class, 'index']);
+$router->get('/estadisticas/excel', [EstadisticaController::class, 'exportarExcel']);
+
+/* ==================================================
+   ESTRUCTURA ACADÉMICA
+   ================================================== */
+
+$router->get('/estructura-academica', [EstructuraAcademicaController::class, 'index']);
+$router->get('/estructura-academica/crear', [EstructuraAcademicaController::class, 'crear']);
+$router->post('/estructura-academica/guardar', [EstructuraAcademicaController::class, 'guardar']);
+$router->get('/estructura-academica/editar', [EstructuraAcademicaController::class, 'editar']);
+$router->post('/estructura-academica/actualizar', [EstructuraAcademicaController::class, 'actualizar']);
+$router->post('/estructura-academica/cambiar-estado', [EstructuraAcademicaController::class, 'cambiarEstado']);
+$router->post('/estructura-academica/eliminar', [EstructuraAcademicaController::class, 'eliminar']);
+$router->get('/estructura-academica/departamentos-por-facultad', [EstructuraAcademicaController::class, 'departamentosPorFacultad']);
+
+/* ==================================================
    USUARIOS
    ================================================== */
 
@@ -139,6 +161,8 @@ $router->post('/usuarios/guardar', [UsuarioController::class, 'guardar']);
 $router->get('/usuarios/editar', [UsuarioController::class, 'editar']);
 $router->post('/usuarios/actualizar', [UsuarioController::class, 'actualizar']);
 $router->post('/usuarios/cambiar-estado', [UsuarioController::class, 'cambiarEstado']);
+$router->get('/usuarios/bloqueados', [UsuarioController::class, 'bloqueados']);
+$router->post('/usuarios/desbloquear', [UsuarioController::class, 'desbloquear']);
 
 /* ==================================================
    ROLES Y PERMISOS

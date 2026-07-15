@@ -27,15 +27,15 @@ $titulo = $esEdicion ? 'Editar categoría' : 'Nueva categoría';
 $accion = $esEdicion ? Config::url('categorias/actualizar') : Config::url('categorias/guardar');
 ?>
 
-<div class="container-fluid">
+<div class="container-fluid admin-page admin-page-categorias">
     <div class="row">
         <div class="col-md-2 p-0">
             <?php require_once __DIR__ . '/../Partials/sidebar.php'; ?>
         </div>
 
-        <div class="col-md-10 p-4">
+        <main class="col-md-10 admin-main">
             <div
-                class="d-flex justify-content-between align-items-center mb-4"
+                class="admin-page-header d-flex justify-content-between align-items-center gap-3"
             >
                 <div>
                     <h2 class="mb-1">
@@ -57,7 +57,7 @@ $accion = $esEdicion ? Config::url('categorias/actualizar') : Config::url('categ
             </div>
 
             <?php if ($error): ?>
-                <div class="alert alert-danger">
+                <div class="alert alert-danger admin-alert">
                     <?= $escapar($error) ?>
                 </div>
             <?php endif; ?>
@@ -74,7 +74,7 @@ $accion = $esEdicion ? Config::url('categorias/actualizar') : Config::url('categ
                     >
                 <?php endif; ?>
 
-                <div class="card p-4 mb-4">
+                <div class="card admin-form-card mb-4">
                     <div class="mb-3">
                         <label
                             for="nombre"
@@ -114,7 +114,7 @@ $accion = $esEdicion ? Config::url('categorias/actualizar') : Config::url('categ
                     </div>
                 </div>
 
-                <div class="d-flex justify-content-end gap-2">
+                <div class="admin-form-actions d-flex justify-content-end gap-2">
                     <a
                         href="<?= Config::url('categorias') ?>"
                         class="btn btn-secondary"
@@ -132,7 +132,7 @@ $accion = $esEdicion ? Config::url('categorias/actualizar') : Config::url('categ
                     </button>
                 </div>
             </form>
-        </div>
+        </main>
     </div>
 </div>
 

@@ -23,6 +23,8 @@ use App\Config\Config; ?>
             rel="stylesheet"
             href="<?= Config::assetsUrl() ?>/CSS/acceso-selector.css"
         >
+
+        <link rel="stylesheet" href="<?= Config::assetsUrl() ?>/CSS/icon-pack.css?v=icon-pack-1">
     </head>
 
     <body>
@@ -33,18 +35,7 @@ use App\Config\Config; ?>
                     class="marca-biblioteca"
                 >
                     <span class="marca-icono">
-                        <svg
-                            viewBox="0 0 24 24"
-                            aria-hidden="true"
-                        >
-                            <path
-                                d="M4 5.5A2.5 2.5 0 0 1 6.5 3H11a3 3 0 0 1 3 3v13a3 3 0 0 0-3-3H4V5.5Z"
-                            ></path>
-
-                            <path
-                                d="M20 5.5A2.5 2.5 0 0 0 17.5 3H14v16a3 3 0 0 1 3-3h3V5.5Z"
-                            ></path>
-                        </svg>
+                        <span class="pack-icon pack-icon-libro" aria-hidden="true"></span>
                     </span>
 
                     <span>
@@ -88,22 +79,7 @@ use App\Config\Config; ?>
                                     icono-administrativo
                                 "
                             >
-                                <svg
-                                    viewBox="0 0 24 24"
-                                    aria-hidden="true"
-                                >
-                                    <path
-                                        d="M12 2a5 5 0 1 0 0 10 5 5 0 0 0 0-10Z"
-                                    ></path>
-
-                                    <path
-                                        d="M4 21a8 8 0 0 1 16 0H4Z"
-                                    ></path>
-
-                                    <path
-                                        d="M18.5 7.5 20 9l3-3"
-                                    ></path>
-                                </svg>
+                                <span class="pack-icon pack-icon-candado-cerrado" aria-hidden="true"></span>
                             </div>
 
                             <span class="tipo-cuenta">
@@ -145,14 +121,7 @@ use App\Config\Config; ?>
                                     Entrar como administrativo
                                 </span>
 
-                                <svg
-                                    viewBox="0 0 24 24"
-                                    aria-hidden="true"
-                                >
-                                    <path
-                                        d="m9 18 6-6-6-6"
-                                    ></path>
-                                </svg>
+                                <span class="pack-icon pack-icon-flecha-derecha" aria-hidden="true"></span>
                             </a>
                         </div>
                     </section>
@@ -172,22 +141,7 @@ use App\Config\Config; ?>
                                     icono-regular
                                 "
                             >
-                                <svg
-                                    viewBox="0 0 24 24"
-                                    aria-hidden="true"
-                                >
-                                    <path
-                                        d="M22 10 12 5 2 10l10 5 10-5Z"
-                                    ></path>
-
-                                    <path
-                                        d="M6 12.5V17c3.5 2.6 8.5 2.6 12 0v-4.5"
-                                    ></path>
-
-                                    <path
-                                        d="M22 10v6"
-                                    ></path>
-                                </svg>
+                                <span class="pack-icon pack-icon-carreras" aria-hidden="true"></span>
                             </div>
 
                             <span class="tipo-cuenta">
@@ -228,14 +182,7 @@ use App\Config\Config; ?>
                                     Entrar como estudiante
                                 </span>
 
-                                <svg
-                                    viewBox="0 0 24 24"
-                                    aria-hidden="true"
-                                >
-                                    <path
-                                        d="m9 18 6-6-6-6"
-                                    ></path>
-                                </svg>
+                                <span class="pack-icon pack-icon-flecha-derecha" aria-hidden="true"></span>
                             </a>
                         </div>
                     </section>
@@ -250,18 +197,7 @@ use App\Config\Config; ?>
                                 "
                             >
                                 <div class="icono-toggle">
-                                    <svg
-                                        viewBox="0 0 24 24"
-                                        aria-hidden="true"
-                                    >
-                                        <path
-                                            d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"
-                                        ></path>
-
-                                        <path
-                                            d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z"
-                                        ></path>
-                                    </svg>
+                                    <span class="pack-icon pack-icon-libro" aria-hidden="true"></span>
                                 </div>
 
                                 <h2>
@@ -289,18 +225,7 @@ use App\Config\Config; ?>
                                 "
                             >
                                 <div class="icono-toggle">
-                                    <svg
-                                        viewBox="0 0 24 24"
-                                        aria-hidden="true"
-                                    >
-                                        <path
-                                            d="M12 2a5 5 0 1 0 0 10 5 5 0 0 0 0-10Z"
-                                        ></path>
-
-                                        <path
-                                            d="M4 21a8 8 0 0 1 16 0"
-                                        ></path>
-                                    </svg>
+                                    <span class="pack-icon pack-icon-usuario" aria-hidden="true"></span>
                                 </div>
 
                                 <h2>
@@ -334,5 +259,6 @@ use App\Config\Config; ?>
             src="<?= Config::assetsUrl() ?>/JavaScript/acceso-selector.js"
             defer
         ></script>
+        <?php require_once __DIR__ . '/../Partials/audio.php'; ?>
     </body>
 </html>

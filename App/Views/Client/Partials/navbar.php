@@ -15,17 +15,12 @@ if ($route === '/') {
     $route = '/portal/inicio';
 }
 
-function activeClientNav(string $path, string $route): string
-{
+$activeClientNav = static function (string $path) use ($route): string {
     return str_starts_with($route, $path) ? 'active' : '';
-}
+};
 
 $escaparNavbar = static function (mixed $valor): string {
-    return htmlspecialchars(
-        (string) ($valor ?? ''),
-        ENT_QUOTES,
-        'UTF-8',
-    );
+    return htmlspecialchars((string) ($valor ?? ''), ENT_QUOTES, 'UTF-8');
 };
 
 $iconoUsuario = $tipoUsuarioSesion === 'Profesor'
@@ -33,101 +28,106 @@ $iconoUsuario = $tipoUsuarioSesion === 'Profesor'
     : 'fa-solid fa-user-graduate';
 ?>
 
-<nav class="navbar navbar-expand-lg client-navbar">
-    <div class="container-fluid">
-        <span class="navbar-brand fw-bold">
-            <i class="fa-solid fa-book-open-reader"></i>
-            Biblioteca Online
-        </span>
+<nav class="navbar navbar-expand-xl client-navbar sticky-top">
+    <div class="container-fluid client-navbar-container">
+        <a class="navbar-brand client-brand" href="<?= Config::url('portal/inicio') ?>">
+            <span class="client-brand-icon">
+                <i class="fa-solid fa-book-open-reader"></i>
+            </span>
+            <span>
+                Biblioteca <strong>Online</strong>
+                <small>Portal académico</small>
+            </span>
+        </a>
 
         <button
-            class="navbar-toggler"
+            class="navbar-toggler client-navbar-toggler"
             type="button"
             data-bs-toggle="collapse"
             data-bs-target="#menuClienteCentral"
             aria-controls="menuClienteCentral"
             aria-expanded="false"
-            aria-label="Abrir menú"
+            aria-label="Abrir menú de navegación"
         >
             <i class="fa-solid fa-bars"></i>
         </button>
 
-        <div
-            class="collapse navbar-collapse"
-            id="menuClienteCentral"
-        >
+        <div class="collapse navbar-collapse" id="menuClienteCentral">
             <ul class="navbar-nav mx-auto client-menu-central">
                 <li class="nav-item">
                     <a
-                        class="nav-link <?= activeClientNav('/portal/inicio', $route) ?>"
+                        class="nav-link <?= $activeClientNav('/portal/inicio') ?>"
                         href="<?= Config::url('portal/inicio') ?>"
                     >
                         <i class="fa-solid fa-house"></i>
-                        Inicio
+                        <span>Inicio</span>
                     </a>
                 </li>
 
                 <?php if ($puedeVerLibros): ?>
                     <li class="nav-item">
                         <a
-                            class="nav-link <?= activeClientNav('/portal/catalogo', $route) ?>"
+                            class="nav-link <?= $activeClientNav('/portal/catalogo') ?>"
                             href="<?= Config::url('portal/catalogo') ?>"
                         >
-                            <i class="fa-solid fa-magnifying-glass"></i>
-                            Catálogo
+                            <i class="fa-solid fa-book-open"></i>
+                            <span>Catálogo</span>
                         </a>
                     </li>
                 <?php endif; ?>
 
                 <li class="nav-item">
                     <a
-                        class="nav-link <?= activeClientNav('/portal/prestamos', $route) ?>"
+                        class="nav-link <?= $activeClientNav('/portal/prestamos') ?>"
                         href="<?= Config::url('portal/prestamos') ?>"
                     >
                         <i class="fa-solid fa-calendar-check"></i>
-                        Mis préstamos
+                        <span>Mis préstamos</span>
                     </a>
                 </li>
 
                 <li class="nav-item">
                     <a
-                        class="nav-link <?= activeClientNav('/portal/solicitudes', $route) ?>"
+                        class="nav-link <?= $activeClientNav('/portal/solicitudes') ?>"
                         href="<?= Config::url('portal/solicitudes') ?>"
                     >
                         <i class="fa-solid fa-circle-plus"></i>
-                        Solicitar libro
+                        <span>Solicitar libro</span>
                     </a>
                 </li>
 
                 <li class="nav-item">
                     <a
-                        class="nav-link <?= activeClientNav('/portal/perfil', $route) ?>"
+                        class="nav-link <?= $activeClientNav('/portal/perfil') ?>"
                         href="<?= Config::url('portal/perfil') ?>"
                     >
                         <i class="fa-solid fa-id-card"></i>
-                        Mi perfil
+                        <span>Mi perfil</span>
                     </a>
                 </li>
             </ul>
 
-            <div class="d-flex align-items-center gap-3 client-navbar-user">
-                <span class="client-user-chip">
-                    <i class="<?= $iconoUsuario ?>"></i>
-
-                    <?= $escaparNavbar($nombreEstudiante) ?>
-
-                    <small class="d-block">
-                        <?= $escaparNavbar($tipoUsuarioSesion) ?>
-                        <?php if ($cipSesion !== ''): ?>
-                            · <?= $escaparNavbar($cipSesion) ?>
-                        <?php endif; ?>
-                    </small>
-                </span>
+            <div class="client-navbar-account">
+                <a class="client-account-card" href="<?= Config::url('portal/perfil') ?>">
+                    <span class="client-account-avatar">
+                        <i class="<?= $iconoUsuario ?>"></i>
+                    </span>
+                    <span class="client-account-copy">
+                        <strong><?= $escaparNavbar($nombreEstudiante) ?></strong>
+                        <small>
+                            <?= $escaparNavbar($tipoUsuarioSesion) ?>
+                            <?php if ($cipSesion !== ''): ?>
+                                · <?= $escaparNavbar($cipSesion) ?>
+                            <?php endif; ?>
+                        </small>
+                    </span>
+                </a>
 
                 <a
                     href="<?= Config::url('portal/logout') ?>"
-                    class="btn btn-danger btn-sm"
+                    class="client-logout-btn"
                     title="Cerrar sesión"
+                    aria-label="Cerrar sesión"
                 >
                     <i class="fa-solid fa-right-from-bracket"></i>
                 </a>
