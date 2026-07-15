@@ -7,7 +7,6 @@ use RuntimeException;
 
 class DatabaseConfig
 {
-
     /**
      * ÚNICO ajuste que cada integrante del equipo debe cambiar en su máquina:
      * 'mysql'  -> si usas MySQL/WAMP
@@ -15,9 +14,9 @@ class DatabaseConfig
      * El resto del sistema (modelos, queries) funciona igual sin tocar nada más.
      */
 
-
     //coloca mysql o sqlsrv
-    private const DRIVER = 'mysql';
+    // coloca mysql o sqlsrv
+    private const DRIVER = 'sqlsrv';
 
     // MySQL
     private const MYSQL_HOST = 'localhost';
@@ -38,8 +37,6 @@ class DatabaseConfig
             $connection =
                 self::DRIVER === 'mysql' ? self::conectarMysql() : self::conectarSqlServer();
 
-
-
             $connection->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
             $connection->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
@@ -52,19 +49,7 @@ class DatabaseConfig
         }
     }
 
-
-
-
-
-
-
     private static function conectarMysql(): PDO
-
-
-
-
-
-
     {
         $dsn = sprintf(
             'mysql:host=%s;dbname=%s;charset=%s',
@@ -73,12 +58,8 @@ class DatabaseConfig
             self::MYSQL_CHARSET,
         );
 
-
         return new PDO($dsn, self::MYSQL_USER, self::MYSQL_PASSWORD);
     }
-
-
-
 
     private static function conectarSqlServer(): PDO
     {
@@ -89,8 +70,5 @@ class DatabaseConfig
         );
 
         return new PDO($dsn, self::SQLSRV_USER, self::SQLSRV_PASSWORD);
-
-
-
     }
 }
