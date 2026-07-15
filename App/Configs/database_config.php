@@ -15,8 +15,7 @@ class DatabaseConfig
      */
 
     //coloca mysql o sqlsrv
-    // coloca mysql o sqlsrv
-    private const DRIVER = 'sqlsrv';
+    private const DRIVER = 'mysql';
 
     // MySQL
     private const MYSQL_HOST = 'localhost';
