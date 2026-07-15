@@ -58,10 +58,12 @@ use App\Controllers\DashboardController;
 use App\Controllers\UsuarioController;
 use App\Controllers\EstudianteAuthController;
 use App\Controllers\PortalController;
+use App\Controllers\PublicoController;
 
 $router = new Router();
 
 $router->get('/', [LoginController::class, 'index']);
+$router->get('/publico', [PublicoController::class, 'index']);
 $router->post('/login', [LoginController::class, 'autenticar']);
 $router->get('/logout', [LoginController::class, 'logout']);
 
