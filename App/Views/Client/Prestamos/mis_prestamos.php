@@ -1,140 +1,246 @@
 <?php
-// Datos que vienen del controlador (PortalController->prestamos())
-// $prestamosActivos, $historial, $nombreEstudiante, $cipSesion, etc.
 
-use App\Helpers\Session;
 use App\Config\Config;
 
-// Obtener mensajes flash (si existen)
-$exitoDevolucion = Session::getFlash('exito_devolucion');
-$errorDevolucion = Session::getFlash('error_devolucion');
-
-// Incluir partials
 require_once __DIR__ . '/../../Partials/header.php';
 require_once __DIR__ . '/../Partials/navbar.php';
 
+$prestamosActivos = $prestamosActivos ?? [];
+$historial = $historial ?? [];
+$exitoDevolucion = $exitoDevolucion ?? null;
+$errorDevolucion = $errorDevolucion ?? null;
+
+$escapar = static function (mixed $valor): string {
+    return htmlspecialchars(
+        (string) ($valor ?? ''),
+        ENT_QUOTES,
+        'UTF-8',
+    );
+};
+
+$formatearFecha = static function (mixed $fecha): string {
+    if (!$fecha) {
+        return 'No registrada';
+    }
+
+    try {
+        $objetoFecha = new DateTimeImmutable((string) $fecha);
+        return $objetoFecha->format('d/m/Y');
+    } catch (Throwable) {
+        return (string) $fecha;
+    }
+};
+
+$claseEstado = static function (string $estado): string {
+    return match ($estado) {
+        'Reservado', 'Pendiente' => 'bg-success',
+        'Prestado' => 'bg-primary',
+        'Vencido' => 'bg-danger',
+        'Devuelto' => 'bg-secondary',
+        'Cancelado' => 'bg-dark',
+        default => 'bg-secondary',
+    };
+};
 ?>
 
 <div class="container-fluid py-4 px-4">
+    <h2 class="mb-4">
+        <i class="fa-solid fa-calendar-check"></i>
+        Mis préstamos
+    </h2>
 
-    <h2><i class="fa-solid fa-calendar-check"></i> Mis préstamos</h2>
-
-    <!-- Mostrar mensajes flash -->
     <?php if ($exitoDevolucion): ?>
-        <div class="alert alert-success alert-dismissible fade show" role="alert">
-            <i class="fa-solid fa-check-circle"></i> <?= htmlspecialchars($exitoDevolucion) ?>
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+        <div class="alert alert-success">
+            <?= $escapar($exitoDevolucion) ?>
         </div>
     <?php endif; ?>
 
     <?php if ($errorDevolucion): ?>
-        <div class="alert alert-danger alert-dismissible fade show" role="alert">
-            <i class="fa-solid fa-exclamation-triangle"></i> <?= htmlspecialchars($errorDevolucion) ?>
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+        <div class="alert alert-danger">
+            <?= $escapar($errorDevolucion) ?>
         </div>
     <?php endif; ?>
 
-    <ul class="nav nav-tabs mb-3" id="prestamosTabs" role="tablist">
+    <ul class="nav nav-tabs mb-3" role="tablist">
         <li class="nav-item" role="presentation">
-            <button class="nav-link active" id="tab-activos-btn" data-bs-toggle="tab" data-bs-target="#tab-activos" type="button" role="tab">
+            <button
+                class="nav-link active"
+                data-bs-toggle="tab"
+                data-bs-target="#prestamos-activos"
+                type="button"
+                role="tab"
+            >
                 Préstamos activos
-                <span class="badge bg-success ms-1"><?= count($prestamosActivos ?? []) ?></span>
+                <span class="badge bg-success ms-1">
+                    <?= count($prestamosActivos) ?>
+                </span>
             </button>
         </li>
+
         <li class="nav-item" role="presentation">
-            <button class="nav-link" id="tab-historial-btn" data-bs-toggle="tab" data-bs-target="#tab-historial" type="button" role="tab">
+            <button
+                class="nav-link"
+                data-bs-toggle="tab"
+                data-bs-target="#historial-prestamos"
+                type="button"
+                role="tab"
+            >
                 Historial
+                <span class="badge bg-secondary ms-1">
+                    <?= count($historial) ?>
+                </span>
             </button>
         </li>
     </ul>
 
     <div class="tab-content">
-        <!-- TAB: Préstamos activos -->
-        <div class="tab-pane fade show active" id="tab-activos" role="tabpanel">
-            <div class="table-responsive">
-                <table class="table table-hover align-middle">
-                    <thead>
-                        <tr>
-                            <th>Libro</th>
-                            <th>Fecha de préstamo</th>
-                            <th>Estado</th>
-                            <th class="text-end">Acción</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php if (empty($prestamosActivos)): ?>
+        <div
+            class="tab-pane fade show active"
+            id="prestamos-activos"
+            role="tabpanel"
+        >
+            <div class="card p-3">
+                <div class="table-responsive">
+                    <table class="table align-middle mb-0">
+                        <thead>
                             <tr>
-                                <td colspan="4" class="text-center text-muted py-4">
-                                    <i class="fa-solid fa-circle-info"></i> No tienes préstamos activos.
-                                </td>
+                                <th>Libro</th>
+                                <th>Fecha de reserva</th>
+                                <th>Vencimiento</th>
+                                <th>Estado</th>
+                                <th class="text-end">Acción</th>
                             </tr>
-                        <?php else: ?>
-                            <?php foreach ($prestamosActivos as $p): ?>
+                        </thead>
+
+                        <tbody>
+                            <?php foreach ($prestamosActivos as $prestamo): ?>
+                                <?php
+                                $estado = (string) ($prestamo['estado'] ?? '');
+                                $esReserva = in_array($estado, ['Pendiente', 'Reservado'], true);
+                                ?>
+
                                 <tr>
-                                    <td class="fw-bold"><?= htmlspecialchars($p['titulo'] ?? 'Título no disponible') ?></td>
-                                    <td><?= date('d/m/Y', strtotime($p['fecha_reserva'])) ?></td>
-                                    <td><span class="badge bg-success"><?= htmlspecialchars($p['estado'] ?? 'Prestado') ?></span></td>
+                                    <td>
+                                        <strong>
+                                            <?= $escapar($prestamo['titulo'] ?? 'Libro sin título') ?>
+                                        </strong>
+
+                                        <?php if (!empty($prestamo['autor'])): ?>
+                                            <small class="d-block text-muted">
+                                                <?= $escapar($prestamo['autor']) ?>
+                                            </small>
+                                        <?php endif; ?>
+                                    </td>
+
+                                    <td>
+                                        <?= $formatearFecha($prestamo['fecha_reserva'] ?? null) ?>
+                                    </td>
+
+                                    <td>
+                                        <?= $formatearFecha($prestamo['fecha_vencimiento'] ?? null) ?>
+                                    </td>
+
+                                    <td>
+                                        <span class="badge <?= $claseEstado($estado) ?>">
+                                            <?= $escapar($estado) ?>
+                                        </span>
+                                    </td>
+
                                     <td class="text-end">
-                                        <form action="<?= Config::url('portal/prestamos/devolver') ?>" method="POST" style="display:inline;">
-                                            <input type="hidden" name="id_reserva" value="<?= (int) $p['id_reserva'] ?>">
-                                            <button type="submit" class="btn btn-success btn-sm">
-                                                <i class="fa-solid fa-arrow-rotate-left"></i> Devolver
+                                        <form
+                                            method="POST"
+                                            action="<?= Config::url('portal/prestamos/devolver') ?>"
+                                            class="d-inline"
+                                            onsubmit="return confirm('¿Seguro que deseas <?= $esReserva ? 'cancelar esta reserva' : 'registrar la devolución' ?>?');"
+                                        >
+                                            <input
+                                                type="hidden"
+                                                name="id_reserva"
+                                                value="<?= (int) $prestamo['id_reserva'] ?>"
+                                            >
+
+                                            <button
+                                                type="submit"
+                                                class="btn btn-sm <?= $esReserva ? 'btn-danger' : 'btn-primary' ?>"
+                                            >
+                                                <i class="fa-solid <?= $esReserva ? 'fa-ban' : 'fa-rotate-left' ?>"></i>
+
+                                                <?= $esReserva
+                                                    ? 'Cancelar reserva'
+                                                    : 'Devolver' ?>
                                             </button>
                                         </form>
                                     </td>
                                 </tr>
                             <?php endforeach; ?>
-                        <?php endif; ?>
-                    </tbody>
-                </table>
+
+                            <?php if (empty($prestamosActivos)): ?>
+                                <tr>
+                                    <td colspan="5" class="text-center py-4 text-muted">
+                                        No tienes reservas o préstamos activos.
+                                    </td>
+                                </tr>
+                            <?php endif; ?>
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
 
-        <!-- TAB: Historial -->
-        <div class="tab-pane fade" id="tab-historial" role="tabpanel">
-            <div class="table-responsive">
-                <table class="table table-hover align-middle">
-                    <thead>
-                        <tr>
-                            <th>Libro</th>
-                            <th>Fecha de préstamo</th>
-                            <th>Fecha de devolución</th>
-                            <th>Estado</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php if (empty($historial)): ?>
+        <div
+            class="tab-pane fade"
+            id="historial-prestamos"
+            role="tabpanel"
+        >
+            <div class="card p-3">
+                <div class="table-responsive">
+                    <table class="table align-middle mb-0">
+                        <thead>
                             <tr>
-                                <td colspan="4" class="text-center text-muted py-4">
-                                    <i class="fa-solid fa-circle-info"></i> No hay registros en tu historial.
-                                </td>
+                                <th>Libro</th>
+                                <th>Fecha de reserva</th>
+                                <th>Fecha de cierre</th>
+                                <th>Estado</th>
                             </tr>
-                        <?php else: ?>
-                            <?php foreach ($historial as $h): ?>
+                        </thead>
+
+                        <tbody>
+                            <?php foreach ($historial as $prestamo): ?>
+                                <?php $estado = (string) ($prestamo['estado'] ?? ''); ?>
+
                                 <tr>
-                                    <td class="fw-bold"><?= htmlspecialchars($h['titulo'] ?? 'Título no disponible') ?></td>
-                                    <td><?= date('d/m/Y', strtotime($h['fecha_reserva'])) ?></td>
                                     <td>
-                                        <?php if (!empty($h['fecha_devolucion'])): ?>
-                                            <?= date('d/m/Y', strtotime($h['fecha_devolucion'])) ?>
-                                        <?php else: ?>
-                                            <span class="text-muted">—</span>
-                                        <?php endif; ?>
+                                        <strong>
+                                            <?= $escapar($prestamo['titulo'] ?? 'Libro sin título') ?>
+                                        </strong>
                                     </td>
+
                                     <td>
-                                        <?php if (($h['estado'] ?? '') === 'Devuelto'): ?>
-                                            <span class="badge bg-success">Devuelto</span>
-                                        <?php elseif (($h['estado'] ?? '') === 'Cancelado'): ?>
-                                            <span class="badge bg-danger">Cancelado</span>
-                                        <?php else: ?>
-                                            <span class="badge bg-secondary"><?= htmlspecialchars($h['estado'] ?? 'Desconocido') ?></span>
-                                        <?php endif; ?>
+                                        <?= $formatearFecha($prestamo['fecha_reserva'] ?? null) ?>
+                                    </td>
+
+                                    <td>
+                                        <?= $formatearFecha($prestamo['fecha_devolucion'] ?? null) ?>
+                                    </td>
+
+                                    <td>
+                                        <span class="badge <?= $claseEstado($estado) ?>">
+                                            <?= $escapar($estado) ?>
+                                        </span>
                                     </td>
                                 </tr>
                             <?php endforeach; ?>
-                        <?php endif; ?>
-                    </tbody>
-                </table>
+
+                            <?php if (empty($historial)): ?>
+                                <tr>
+                                    <td colspan="4" class="text-center py-4 text-muted">
+                                        Todavía no tienes movimientos en el historial.
+                                    </td>
+                                </tr>
+                            <?php endif; ?>
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>

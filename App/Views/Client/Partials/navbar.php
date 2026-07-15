@@ -2,16 +2,13 @@
 
 use App\Config\Config;
 
-$nombreEstudiante = $nombreEstudiante ?? 'Estudiante';
-
-$cipSesion = $cipSesion ?? '0-000-0000';
-
+$nombreEstudiante = $nombreEstudiante ?? 'Usuario';
+$cipSesion = $cipSesion ?? '';
+$tipoUsuarioSesion = $tipoUsuarioSesion ?? 'Usuario';
 $puedeVerLibros = $puedeVerLibros ?? false;
 
 $currentPath = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
-
 $route = str_replace(Config::baseUrl(), '', $currentPath);
-
 $route = '/' . trim($route, '/');
 
 if ($route === '/') {
@@ -24,8 +21,16 @@ function activeClientNav(string $path, string $route): string
 }
 
 $escaparNavbar = static function (mixed $valor): string {
-    return htmlspecialchars((string) ($valor ?? ''), ENT_QUOTES, 'UTF-8');
+    return htmlspecialchars(
+        (string) ($valor ?? ''),
+        ENT_QUOTES,
+        'UTF-8',
+    );
 };
+
+$iconoUsuario = $tipoUsuarioSesion === 'Profesor'
+    ? 'fa-solid fa-chalkboard-user'
+    : 'fa-solid fa-user-graduate';
 ?>
 
 <nav class="navbar navbar-expand-lg client-navbar">
@@ -105,16 +110,17 @@ $escaparNavbar = static function (mixed $valor): string {
                 </li>
             </ul>
 
-            <div
-                class="d-flex align-items-center gap-3 client-navbar-user"
-            >
+            <div class="d-flex align-items-center gap-3 client-navbar-user">
                 <span class="client-user-chip">
-                    <i class="fa-solid fa-user-graduate"></i>
+                    <i class="<?= $iconoUsuario ?>"></i>
 
                     <?= $escaparNavbar($nombreEstudiante) ?>
 
                     <small class="d-block">
-                        <?= $escaparNavbar($cipSesion) ?>
+                        <?= $escaparNavbar($tipoUsuarioSesion) ?>
+                        <?php if ($cipSesion !== ''): ?>
+                            · <?= $escaparNavbar($cipSesion) ?>
+                        <?php endif; ?>
                     </small>
                 </span>
 

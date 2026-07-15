@@ -350,8 +350,11 @@ class UsuarioController extends Controller
         try {
             $nuevoEstado = (int) $estadoRecibido;
 
-            $usuarioModel->cambiarEstado((int) $idUsuario, $nuevoEstado);
+            $estadoActualizado = $usuarioModel->cambiarEstado((int) $idUsuario, $nuevoEstado);
 
+            if (!$estadoActualizado) {
+                throw new \RuntimeException('La base de datos no modificó el estado del usuario.');
+            }
             Session::flash(
                 'success',
                 $nuevoEstado === 1

@@ -472,4 +472,26 @@ class Usuario extends Model
 
         return $stmt->fetchAll();
     }
+
+    public function cambiarEstado(int $idUsuario, int $estado): bool
+    {
+        if (!in_array($estado, [0, 1], true)) {
+            throw new \InvalidArgumentException('El estado del usuario no es válido.');
+        }
+
+        $sql = "UPDATE usuarios
+            SET
+                estado = :estado,
+                fecha_actualizacion = CURRENT_TIMESTAMP
+            WHERE id_usuario = :id_usuario";
+
+        $stmt = $this->db->prepare($sql);
+
+        $stmt->execute([
+            ':estado' => $estado,
+            ':id_usuario' => $idUsuario,
+        ]);
+
+        return $stmt->rowCount() > 0;
+    }
 }

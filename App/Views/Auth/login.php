@@ -1,63 +1,184 @@
 <?php
 
-use App\Helpers\Session;
 use App\Config\Config;
+use App\Helpers\Session;
 
 $error = Session::getFlash('error');
+$usuarioAnterior = Session::getFlash('old_usuario') ?? '';
 
+$escapar = static function (mixed $valor): string {
+    return htmlspecialchars(
+        (string) ($valor ?? ''),
+        ENT_QUOTES,
+        'UTF-8',
+    );
+};
 ?>
 
-<!DOCTYPE html>
+<!doctype html>
 <html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - MyProjectBibliotecaV2</title>
+    <head>
+        <meta charset="UTF-8">
+        <meta
+            name="viewport"
+            content="width=device-width, initial-scale=1.0"
+        >
+        <meta
+            name="description"
+            content="Acceso administrativo de Biblioteca Online"
+        >
 
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="<?= Config::assetsUrl() ?>/CSS/style.css?v=modern-library-1">
-</head>
+        <title>Acceso administrativo | Biblioteca Online</title>
 
-<body class="login-body">
+        <link
+            rel="preconnect"
+            href="https://fonts.googleapis.com"
+        >
+        <link
+            rel="preconnect"
+            href="https://fonts.gstatic.com"
+            crossorigin
+        >
+        <link
+            href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800;900&display=swap"
+            rel="stylesheet"
+        >
+        <link
+            rel="stylesheet"
+            href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css"
+        >
+        <link
+            rel="stylesheet"
+            href="<?= Config::asset('CSS/admin-login.css') ?>"
+        >
+    </head>
 
-<div class="login-container">
-    <div class="card-login">
-        <div class="text-center mb-4">
-            <i class="fa-solid fa-book-open-reader logo"></i>
-            <h2>MyProjectBiblioteca</h2>
-            <p>Sistema de Gestión Bibliotecaria</p>
-        </div>
+    <body class="admin-login-body">
+        <main class="admin-login-page">
+            <a
+                href="<?= Config::url() ?>"
+                class="admin-login-back"
+                aria-label="Volver al selector de acceso"
+            >
+                <i class="fa-solid fa-arrow-left"></i>
+                Volver al selector
+            </a>
 
-        <?php if ($error): ?>
-            <div class="alert alert-danger text-center">
-                <?= $error ?>
-            </div>
-        <?php endif; ?>
+            <section class="admin-login-card">
+                <div class="admin-login-decoration" aria-hidden="true"></div>
 
-        <form method="POST" action="<?= Config::baseUrl() ?>/login">
-            <div class="mb-3">
-                <label>Usuario</label>
-                <input type="text" name="usuario" class="form-control" required>
-            </div>
+                <header class="admin-login-header">
+                    <div class="admin-login-logo" aria-hidden="true">
+                        <i class="fa-solid fa-book-open-reader"></i>
+                    </div>
 
-            <div class="mb-4">
-                <label>Contraseña</label>
-                <input type="password" name="password" class="form-control" required>
-            </div>
+                    <span class="admin-login-eyebrow">
+                        Personal autorizado
+                    </span>
 
-            <button class="btn btn-primary w-100">
-                <i class="fa-solid fa-right-to-bracket"></i>
-                Ingresar
-            </button>
-        </form>
+                    <h1>Acceso administrativo</h1>
 
-        <small class="d-block text-center mt-3 text-muted">
-            Usuario inicial: admin / root2514
-        </small>
-    </div>
-</div>
+                    <p>
+                        Ingresa con tu usuario y contraseña para gestionar
+                        la biblioteca.
+                    </p>
+                </header>
 
-</body>
+                <?php if ($error): ?>
+                    <div
+                        class="admin-login-alert"
+                        role="alert"
+                    >
+                        <i class="fa-solid fa-circle-exclamation"></i>
+                        <span><?= $escapar($error) ?></span>
+                    </div>
+                <?php endif; ?>
+
+                <form
+                    method="POST"
+                    action="<?= Config::url('login') ?>"
+                    class="admin-login-form"
+                    autocomplete="on"
+                >
+                    <div class="admin-login-field">
+                        <label for="usuario">
+                            Usuario
+                        </label>
+
+                        <div class="admin-login-input-wrap">
+                            <i
+                                class="fa-solid fa-user"
+                                aria-hidden="true"
+                            ></i>
+
+                            <input
+                                id="usuario"
+                                type="text"
+                                name="usuario"
+                                value="<?= $escapar($usuarioAnterior) ?>"
+                                placeholder="Escribe tu usuario"
+                                maxlength="100"
+                                autocomplete="username"
+                                required
+                                autofocus
+                            >
+                        </div>
+                    </div>
+
+                    <div class="admin-login-field">
+                        <label for="password">
+                            Contraseña
+                        </label>
+
+                        <div class="admin-login-input-wrap">
+                            <i
+                                class="fa-solid fa-lock"
+                                aria-hidden="true"
+                            ></i>
+
+                            <input
+                                id="password"
+                                type="password"
+                                name="password"
+                                placeholder="Escribe tu contraseña"
+                                maxlength="255"
+                                autocomplete="current-password"
+                                required
+                            >
+
+                            <button
+                                type="button"
+                                id="toggleAdminPassword"
+                                class="admin-login-password-toggle"
+                                aria-label="Mostrar contraseña"
+                                aria-pressed="false"
+                            >
+                                <i class="fa-solid fa-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <button
+                        type="submit"
+                        class="admin-login-submit"
+                    >
+                        <span>Iniciar sesión</span>
+                        <i class="fa-solid fa-arrow-right-to-bracket"></i>
+                    </button>
+                </form>
+
+                <footer class="admin-login-footer">
+                    <i class="fa-solid fa-shield-halved"></i>
+                    <span>
+                        Acceso protegido mediante roles y permisos.
+                    </span>
+                </footer>
+            </section>
+        </main>
+
+        <script
+            src="<?= Config::asset('JavaScript/admin-login.js') ?>"
+            defer
+        ></script>
+    </body>
 </html>

@@ -2,62 +2,40 @@
 
 namespace App\Controllers;
 
-use App\Core\Controller;
-use App\Helpers\Session;
-use App\Helpers\Sanitizer;
-use App\Helpers\Validator;
-use App\Middleware\EstudianteAuth;
-use App\Models\Libro;
-use App\Models\Categoria;
-use App\Models\Solicitud;
-use App\Models\Reserva;
-use App\Models\Estudiante;
-
 use App\Config\Config;
+use App\Core\Controller;
+use App\Helpers\Sanitizer;
+use App\Helpers\Session;
+use App\Helpers\Validator;
+use App\Middleware\UsuarioRegularAuth;
+use App\Models\Categoria;
+use App\Models\Libro;
+use App\Models\ReservaRegular;
+use App\Models\SolicitudRegular;
 use App\Models\Usuario;
+use App\Models\UsuarioRegular;
 
 class PortalController extends Controller
 {
-    private ?array $estudianteActualCache = null;
+    private ?array $perfilActualCache = null;
     private ?array $permisosActualesCache = null;
 
     public function __construct()
     {
-        EstudianteAuth::check();
-    }
-
-    private function datosSesion(): array
-    {
-        $estudiante = $this->obtenerEstudianteActual();
-
-        return [
-            'nombreEstudiante' => Session::get('nombre_estudiante') ?? 'Estudiante',
-
-            'cipSesion' => Session::get('cip') ?? '',
-
-            'carreraSesion' => $estudiante['carrera'] ?? 'Carrera no especificada',
-
-            'permisosPortal' => $this->obtenerPermisosActuales(),
-
-            'puedeVerLibros' => $this->tienePermisoPortal('libros.ver'),
-
-            'errorPermiso' => Session::getFlash('error_permiso'),
-        ];
+        UsuarioRegularAuth::check();
     }
 
     public function inicio(): void
     {
-        $idEstudiante = (int) Session::get('id_estudiante');
-
+        $idUsuario = $this->obtenerIdUsuarioSesion();
         $puedeVerLibros = $this->tienePermisoPortal('libros.ver');
-
-        $reservaModel = new Reserva();
+        $reservaModel = new ReservaRegular();
 
         $stats = [
             'total_libros' => 0,
             'disponibles_ahora' => 0,
             'categorias' => 0,
-            'prestamos_activos' => $reservaModel->contarActivasPorEstudiante($idEstudiante),
+            'prestamos_activos' => $reservaModel->contarActivasPorUsuario($idUsuario),
         ];
 
         $categoriasDestacadas = [];
@@ -70,20 +48,14 @@ class PortalController extends Controller
             $categoriaModel = new Categoria();
 
             $stats['total_libros'] = $libroModel->contarTotal();
-
             $stats['disponibles_ahora'] = $libroModel->contarDisponibles();
-
             $stats['categorias'] = $categoriaModel->contar();
 
             $iconosPorCategoria = [
                 'Sistemas' => 'fa-solid fa-microchip',
-
                 'Matemática' => 'fa-solid fa-square-root-variable',
-
                 'Química' => 'fa-solid fa-flask',
-
                 'Lógica' => 'fa-solid fa-diagram-project',
-
                 'Estadística' => 'fa-solid fa-chart-line',
             ];
 
@@ -92,21 +64,19 @@ class PortalController extends Controller
             $categoriasDestacadas = array_map(
                 static fn(array $categoria): array => [
                     'nombre' => $categoria['nombre'],
-
                     'icono' => $iconosPorCategoria[$categoria['nombre']] ?? 'fa-solid fa-tag',
                 ],
                 $categoriasListado,
             );
 
             $categorias = array_map(
-                static fn(array $categoria): string => $categoria['nombre'],
+                static fn(array $categoria): string => (string) $categoria['nombre'],
                 $categoriasListado,
             );
 
             $librosRecientes = $libroModel->recientes(4);
 
             $year = date('Y');
-
             $periodos = [
                 [
                     'nombre' => 'Ene - Abr',
@@ -126,18 +96,23 @@ class PortalController extends Controller
             ];
 
             foreach ($periodos as $periodo) {
-                $libros = $reservaModel->librosMasUsados($periodo['inicio'], $periodo['fin'], 5);
+                $libros = $reservaModel->librosMasUsados(
+                    $periodo['inicio'],
+                    $periodo['fin'],
+                    5,
+                );
 
                 $topLibrosPorPeriodo[] = [
                     'nombre' => $periodo['nombre'],
-
                     'libros' => $libros,
-
                     'labels' => array_column($libros, 'titulo'),
-
                     'data' => array_map(
-                        static fn(array $libro): int => (int) ($libro['total_prestamos'] ??
-                            ($libro['total_reservas'] ?? ($libro['total_usos'] ?? 0))),
+                        static fn(array $libro): int => (int) (
+                            $libro['total_prestamos']
+                            ?? $libro['total_reservas']
+                            ?? $libro['total_usos']
+                            ?? 0
+                        ),
                         $libros,
                     ),
                 ];
@@ -146,21 +121,18 @@ class PortalController extends Controller
 
         $this->view(
             'Client/Home/inicio',
-            array_merge($this->datosSesion(), [
-                'stats' => $stats,
-
-                'categoriasDestacadas' => $categoriasDestacadas,
-
-                'librosRecientes' => $librosRecientes,
-
-                'topLibrosPorPeriodo' => $topLibrosPorPeriodo,
-
-                'busqueda' => '',
-
-                'categorias' => $categorias,
-
-                'categoriaSeleccionada' => '',
-            ]),
+            array_merge(
+                $this->datosSesion(),
+                [
+                    'stats' => $stats,
+                    'categoriasDestacadas' => $categoriasDestacadas,
+                    'librosRecientes' => $librosRecientes,
+                    'topLibrosPorPeriodo' => $topLibrosPorPeriodo,
+                    'busqueda' => '',
+                    'categorias' => $categorias,
+                    'categoriaSeleccionada' => '',
+                ],
+            ),
         );
     }
 
@@ -182,57 +154,71 @@ class PortalController extends Controller
 
         $libros = $libroModel->listar($buscar, $categoria, $porPagina, $offset);
         $total = $libroModel->contar($buscar, $categoria);
-        $totalPaginas = (int) ceil($total / $porPagina);
+        $totalPaginas = max(1, (int) ceil($total / $porPagina));
 
-        $categorias = array_map(fn($c) => $c['nombre'], $categoriaModel->listar());
+        $categoriasListado = $categoriaModel->listar();
+        $categorias = array_map(
+            static fn(array $item): string => (string) $item['nombre'],
+            $categoriasListado,
+        );
 
-        // Pasar datos a la vista
         $this->view(
             'Client/Catalogo/index',
-            array_merge($this->datosSesion(), [
-                'libros' => $libros,
-                'categorias' => $categorias,
-                'busqueda' => $buscar,
-                'categoriaSeleccionada' => $categoria,
-                'paginaActual' => $pagina,
-                'totalPaginas' => $totalPaginas,
-            ]),
+            array_merge(
+                $this->datosSesion(),
+                [
+                    'libros' => $libros,
+                    'categorias' => $categorias,
+                    'busqueda' => $buscar,
+                    'categoriaSeleccionada' => $categoria,
+                    'paginaActual' => $pagina,
+                    'totalPaginas' => $totalPaginas,
+                ],
+            ),
         );
     }
 
     public function detalle(): void
     {
-        $this->exigirPermisoPortal('libros.ver', 'No tienes permiso para consultar los libros.');
+        $this->exigirPermisoPortal(
+            'libros.ver',
+            'No tienes permiso para consultar los libros.',
+        );
 
-        $id = (int) ($_GET['id'] ?? 0);
-
+        $idLibro = (int) ($_GET['id'] ?? 0);
         $libroModel = new Libro();
-        $libro = $libroModel->buscarPorId($id);
+        $libro = $libroModel->buscarPorId($idLibro);
 
         $this->view(
             'Client/Catalogo/detalle',
-            array_merge($this->datosSesion(), [
-                'libro' => $libro,
-                'exitoReserva' => Session::getFlash('exito_reserva'),
-                'errorReserva' => Session::getFlash('error_reserva'),
-            ]),
+            array_merge(
+                $this->datosSesion(),
+                [
+                    'libro' => $libro,
+                    'exitoReserva' => Session::getFlash('exito_reserva'),
+                    'errorReserva' => Session::getFlash('error_reserva'),
+                ],
+            ),
         );
     }
 
     public function reservar(): void
     {
-        $this->exigirPermisoPortal('libros.ver', 'No tienes permiso para reservar libros.');
+        $this->exigirPermisoPortal(
+            'libros.ver',
+            'No tienes permiso para reservar libros.',
+        );
 
         $idLibro = (int) ($_POST['id_libro'] ?? 0);
-        $idEstudiante = (int) Session::get('id_estudiante');
+        $idUsuario = $this->obtenerIdUsuarioSesion();
 
-        if ($idLibro <= 0 || $idEstudiante <= 0) {
+        if ($idLibro <= 0 || $idUsuario <= 0) {
             Session::flash('error_reserva', 'Datos inválidos para procesar la reserva.');
             $this->redirigirADetalle($idLibro);
         }
 
-        $reservaModel = new Reserva();
-        $resultado = $reservaModel->crear($idEstudiante, $idLibro);
+        $reservaModel = new ReservaRegular();
+        $resultado = $reservaModel->crearPorUsuario($idUsuario, $idLibro);
 
         if ($resultado['ok']) {
             Session::flash('exito_reserva', $resultado['mensaje']);
@@ -245,41 +231,43 @@ class PortalController extends Controller
 
     public function prestamos(): void
     {
-        $idEstudiante = (int) Session::get('id_estudiante');
-        $reservaModel = new Reserva();
+        $idUsuario = $this->obtenerIdUsuarioSesion();
+        $reservaModel = new ReservaRegular();
 
-        $prestamosActivos = $reservaModel->listarActivasPorEstudiante($idEstudiante);
-        $historial = $reservaModel->listarHistorialPorEstudiante($idEstudiante);
+        $prestamosActivos = $reservaModel->listarActivasPorUsuario($idUsuario);
+        $historial = $reservaModel->listarHistorialPorUsuario($idUsuario);
 
         $this->view(
             'Client/Prestamos/mis_prestamos',
-            array_merge($this->datosSesion(), [
-                'prestamosActivos' => $prestamosActivos,
-                'historial' => $historial,
-            ]),
+            array_merge(
+                $this->datosSesion(),
+                [
+                    'prestamosActivos' => $prestamosActivos,
+                    'historial' => $historial,
+                    'exitoDevolucion' => Session::getFlash('exito_devolucion'),
+                    'errorDevolucion' => Session::getFlash('error_devolucion'),
+                ],
+            ),
         );
     }
 
     public function devolver(): void
     {
         $idReserva = (int) ($_POST['id_reserva'] ?? 0);
-        $idEstudiante = (int) Session::get('id_estudiante');
+        $idUsuario = $this->obtenerIdUsuarioSesion();
 
-        if ($idReserva <= 0 || $idEstudiante <= 0) {
+        if ($idReserva <= 0 || $idUsuario <= 0) {
             Session::flash('error_devolucion', 'Datos inválidos.');
             $this->redirigirAPrestamos();
         }
 
-        $reservaModel = new Reserva();
-        $ok = $reservaModel->devolver($idReserva, $idEstudiante);
+        $reservaModel = new ReservaRegular();
+        $resultado = $reservaModel->cerrarPorUsuario($idReserva, $idUsuario);
 
-        if ($ok) {
-            Session::flash('exito_devolucion', 'Préstamo devuelto correctamente.');
+        if ($resultado['ok']) {
+            Session::flash('exito_devolucion', $resultado['mensaje']);
         } else {
-            Session::flash(
-                'error_devolucion',
-                'No se pudo procesar la devolución. Verifica que el préstamo exista y esté activo.',
-            );
+            Session::flash('error_devolucion', $resultado['mensaje']);
         }
 
         $this->redirigirAPrestamos();
@@ -287,69 +275,74 @@ class PortalController extends Controller
 
     public function solicitudes(): void
     {
-        $idEstudiante = (int) Session::get('id_estudiante');
-        $modelo = new Solicitud();
+        $idUsuario = $this->obtenerIdUsuarioSesion();
+        $modelo = new SolicitudRegular();
 
         $this->view(
             'Client/Solicitudes/solicitar',
-            array_merge($this->datosSesion(), [
-                'areas' => Solicitud::areasValidas(),
-                'misSolicitudes' => $modelo->listarPorEstudiante($idEstudiante),
-                'errorSolicitud' => Session::getFlash('error_solicitud'),
-                'exitoSolicitud' => Session::getFlash('exito_solicitud'),
-                'tituloAnterior' => Session::getFlash('titulo_anterior'),
-                'areaAnterior' => Session::getFlash('area_anterior'),
-                'descripcionAnterior' => Session::getFlash('descripcion_anterior'),
-            ]),
+            array_merge(
+                $this->datosSesion(),
+                [
+                    'areas' => SolicitudRegular::areasValidas(),
+                    'misSolicitudes' => $modelo->listarPorUsuario($idUsuario),
+                    'errorSolicitud' => Session::getFlash('error_solicitud'),
+                    'exitoSolicitud' => Session::getFlash('exito_solicitud'),
+                    'tituloAnterior' => Session::getFlash('titulo_anterior'),
+                    'areaAnterior' => Session::getFlash('area_anterior'),
+                    'descripcionAnterior' => Session::getFlash('descripcion_anterior'),
+                ],
+            ),
         );
     }
 
     public function guardarSolicitud(): void
     {
-        $idEstudiante = (int) Session::get('id_estudiante');
+        $idUsuario = $this->obtenerIdUsuarioSesion();
 
         $titulo = Sanitizer::text($_POST['titulo_libro'] ?? '');
         $area = Sanitizer::text($_POST['area'] ?? '');
         $descripcion = Sanitizer::text($_POST['descripcion'] ?? '');
 
         if (!Validator::required($titulo) || !Validator::min($titulo, 3)) {
+            $this->guardarDatosSolicitudAnterior($titulo, $area, $descripcion);
             Session::flash('error_solicitud', 'Escribe el título del libro (mínimo 3 caracteres).');
-            Session::flash('titulo_anterior', $titulo);
-            Session::flash('area_anterior', $area);
-            Session::flash('descripcion_anterior', $descripcion);
             $this->redirigirASolicitudes();
         }
 
-        if (!in_array($area, Solicitud::areasValidas(), true)) {
+        if (!in_array($area, SolicitudRegular::areasValidas(), true)) {
+            $this->guardarDatosSolicitudAnterior($titulo, $area, $descripcion);
             Session::flash('error_solicitud', 'Selecciona un área válida.');
-            Session::flash('titulo_anterior', $titulo);
-            Session::flash('area_anterior', $area);
-            Session::flash('descripcion_anterior', $descripcion);
             $this->redirigirASolicitudes();
         }
 
-        $modelo = new Solicitud();
-        $modelo->crear($idEstudiante, $titulo, $area, $descripcion);
+        $modelo = new SolicitudRegular();
+        $creada = $modelo->crearPorUsuario($idUsuario, $titulo, $area, $descripcion);
+
+        if (!$creada) {
+            $this->guardarDatosSolicitudAnterior($titulo, $area, $descripcion);
+            Session::flash('error_solicitud', 'No se pudo enviar la solicitud.');
+            $this->redirigirASolicitudes();
+        }
 
         Session::flash(
             'exito_solicitud',
             'Tu solicitud fue enviada. La administración la revisará pronto.',
         );
+
         $this->redirigirASolicitudes();
     }
 
     public function perfil(): void
     {
-        $idEstudiante = (int) Session::get('id_estudiante');
-        $estudianteModel = new Estudiante();
-        $estudiante = $estudianteModel->obtenerPorId($idEstudiante);
+        $idUsuario = $this->obtenerIdUsuarioSesion();
+        $perfil = $this->obtenerPerfilActual();
 
-        // Estadísticas de préstamos y solicitudes
-        $reservaModel = new Reserva();
-        $prestamosActivos = $reservaModel->listarActivasPorEstudiante($idEstudiante);
-        $historial = $reservaModel->listarHistorialPorEstudiante($idEstudiante);
-        $solicitudModel = new Solicitud();
-        $solicitudes = $solicitudModel->listarPorEstudiante($idEstudiante);
+        $reservaModel = new ReservaRegular();
+        $solicitudModel = new SolicitudRegular();
+
+        $prestamosActivos = $reservaModel->listarActivasPorUsuario($idUsuario);
+        $historial = $reservaModel->listarHistorialPorUsuario($idUsuario);
+        $solicitudes = $solicitudModel->listarPorUsuario($idUsuario);
 
         $statsPerfil = [
             'prestamos_activos' => count($prestamosActivos),
@@ -359,54 +352,54 @@ class PortalController extends Controller
 
         $this->view(
             'Client/Perfil/perfil',
-            array_merge($this->datosSesion(), [
-                'estudiante' => $estudiante,
-                'statsPerfil' => $statsPerfil,
-            ]),
+            array_merge(
+                $this->datosSesion(),
+                [
+                    'perfil' => $perfil,
+                    'estudiante' => $perfil,
+                    'statsPerfil' => $statsPerfil,
+                ],
+            ),
         );
     }
 
-    private function redirigirADetalle(int $idLibro): never
+    private function datosSesion(): array
     {
-        header(
-            'Location: ' . \App\Config\Config::url('portal/catalogo/detalle') . '?id=' . $idLibro,
-        );
-        exit();
+        $perfil = $this->obtenerPerfilActual();
+
+        return [
+            'nombreEstudiante' => $perfil['nombre_portal']
+                ?? Session::get('portal_nombre')
+                ?? 'Usuario',
+            'nombreUsuarioPortal' => $perfil['nombre_portal'] ?? 'Usuario',
+            'cipSesion' => $perfil['cip']
+                ?? Session::get('portal_cip')
+                ?? '',
+            'carreraSesion' => $perfil['detalle_perfil'] ?? 'Perfil no especificado',
+            'tipoUsuarioSesion' => $perfil['tipo_usuario']
+                ?? Session::get('portal_tipo_usuario')
+                ?? 'Usuario',
+            'facultadSesion' => $perfil['facultad'] ?? '',
+            'perfilRegular' => $perfil,
+            'permisosPortal' => $this->obtenerPermisosActuales(),
+            'puedeVerLibros' => $this->tienePermisoPortal('libros.ver'),
+            'errorPermiso' => Session::getFlash('error_permiso'),
+        ];
     }
 
-    private function redirigirASolicitudes(): never
+    private function obtenerPerfilActual(): array
     {
-        header('Location: ' . \App\Config\Config::url('portal/solicitudes'));
-        exit();
-    }
-
-    private function redirigirAPrestamos(): never
-    {
-        header('Location: ' . \App\Config\Config::url('portal/prestamos'));
-        exit();
-    }
-
-    private function obtenerEstudianteActual(): array
-    {
-        if ($this->estudianteActualCache !== null) {
-            return $this->estudianteActualCache;
+        if ($this->perfilActualCache !== null) {
+            return $this->perfilActualCache;
         }
 
-        $idEstudiante = (int) Session::get('id_estudiante');
+        $idUsuario = $this->obtenerIdUsuarioSesion();
+        $modeloRegular = new UsuarioRegular();
+        $perfil = $modeloRegular->obtenerPorIdUsuario($idUsuario);
 
-        if ($idEstudiante <= 0) {
-            $this->estudianteActualCache = [];
+        $this->perfilActualCache = is_array($perfil) ? $perfil : [];
 
-            return $this->estudianteActualCache;
-        }
-
-        $estudianteModel = new Estudiante();
-
-        $estudiante = $estudianteModel->buscarPorId($idEstudiante);
-
-        $this->estudianteActualCache = is_array($estudiante) ? $estudiante : [];
-
-        return $this->estudianteActualCache;
+        return $this->perfilActualCache;
     }
 
     private function obtenerPermisosActuales(): array
@@ -415,25 +408,18 @@ class PortalController extends Controller
             return $this->permisosActualesCache;
         }
 
-        $estudiante = $this->obtenerEstudianteActual();
-
-        $idUsuario = (int) ($estudiante['id_usuario'] ?? 0);
+        $idUsuario = $this->obtenerIdUsuarioSesion();
 
         if ($idUsuario <= 0) {
             $this->permisosActualesCache = [];
-
-            return $this->permisosActualesCache;
+            return [];
         }
 
         $usuarioModel = new Usuario();
-
         $permisos = $usuarioModel->obtenerPermisosUsuario($idUsuario);
 
-        $permisos = array_values(array_unique($permisos));
-
-        Session::set('permisos_portal', $permisos);
-
-        $this->permisosActualesCache = $permisos;
+        $this->permisosActualesCache = array_values(array_unique($permisos));
+        Session::set('portal_permisos', $this->permisosActualesCache);
 
         return $this->permisosActualesCache;
     }
@@ -452,9 +438,46 @@ class PortalController extends Controller
         }
 
         Session::flash('error_permiso', $mensaje);
-
         header('Location: ' . Config::url('portal/inicio'));
+        exit();
+    }
 
+    private function obtenerIdUsuarioSesion(): int
+    {
+        return (int) Session::get('portal_id_usuario');
+    }
+
+    private function guardarDatosSolicitudAnterior(
+        string $titulo,
+        string $area,
+        string $descripcion,
+    ): void {
+        Session::flash('titulo_anterior', $titulo);
+        Session::flash('area_anterior', $area);
+        Session::flash('descripcion_anterior', $descripcion);
+    }
+
+    private function redirigirADetalle(int $idLibro): never
+    {
+        header(
+            'Location: ' .
+            Config::url('portal/catalogo/detalle') .
+            '?id=' .
+            $idLibro,
+        );
+
+        exit();
+    }
+
+    private function redirigirASolicitudes(): never
+    {
+        header('Location: ' . Config::url('portal/solicitudes'));
+        exit();
+    }
+
+    private function redirigirAPrestamos(): never
+    {
+        header('Location: ' . Config::url('portal/prestamos'));
         exit();
     }
 }
