@@ -158,7 +158,7 @@ class ReservaController extends Controller
     public function exportarExcel(): void
     {
         Auth::check();
-        Auth::exigirPermiso('reservas.ver');
+        Auth::exigirPermiso('reportes.exportar_excel');
 
         $filtros = $this->leerFiltros();
         $reservas = (new Reserva())->obtenerReporte($filtros);

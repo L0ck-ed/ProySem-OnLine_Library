@@ -6,6 +6,7 @@ $nombreEstudiante = $nombreEstudiante ?? 'Usuario';
 $cipSesion = $cipSesion ?? '';
 $tipoUsuarioSesion = $tipoUsuarioSesion ?? 'Usuario';
 $puedeVerLibros = $puedeVerLibros ?? false;
+$puedeInterbibliotecario = $puedeInterbibliotecario ?? false;
 
 $currentPath = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
 $route = str_replace(Config::baseUrl(), '', $currentPath);
@@ -96,6 +97,18 @@ $iconoUsuario = $tipoUsuarioSesion === 'Profesor'
                     </a>
                 </li>
 
+                <?php if ($puedeInterbibliotecario): ?>
+                    <li class="nav-item">
+                        <a
+                            class="nav-link <?= $activeClientNav('/portal/interbibliotecario') ?>"
+                            href="<?= Config::url('portal/interbibliotecario') ?>"
+                        >
+                            <i class="fa-solid fa-building-columns"></i>
+                            <span>Catálogo externo</span>
+                        </a>
+                    </li>
+                <?php endif; ?>
+
                 <li class="nav-item">
                     <a
                         class="nav-link <?= $activeClientNav('/portal/perfil') ?>"
@@ -123,14 +136,16 @@ $iconoUsuario = $tipoUsuarioSesion === 'Profesor'
                     </span>
                 </a>
 
-                <a
-                    href="<?= Config::url('portal/logout') ?>"
-                    class="client-logout-btn"
-                    title="Cerrar sesión"
-                    aria-label="Cerrar sesión"
-                >
-                    <i class="fa-solid fa-right-from-bracket"></i>
-                </a>
+                <form method="POST" action="<?= Config::url('portal/logout') ?>" class="m-0">
+                    <button
+                        type="submit"
+                        class="client-logout-btn"
+                        title="Cerrar sesión"
+                        aria-label="Cerrar sesión"
+                    >
+                        <i class="fa-solid fa-right-from-bracket"></i>
+                    </button>
+                </form>
             </div>
         </div>
     </div>

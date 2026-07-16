@@ -254,6 +254,13 @@ use App\Config\Config; ?>
                     El acceso está protegido según tus roles y permisos.
                 </p>
             </section>
+
+            <div class="ayuda-acceso" style="text-align:center; margin-top:1.25rem;">
+                <a href="<?= Config::url('publico') ?>" style="display:inline-flex; align-items:center; gap:.5rem;">
+                    <span class="pack-icon pack-icon-libro" aria-hidden="true"></span>
+                    Conoce el sistema, su tecnología y la importancia de las bibliotecas digitales
+                </a>
+            </div>
         </main>
         <script
             src="<?= Config::assetsUrl() ?>/JavaScript/acceso-selector.js"

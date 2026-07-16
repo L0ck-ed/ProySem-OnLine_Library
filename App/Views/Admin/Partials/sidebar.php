@@ -109,6 +109,13 @@ if (!function_exists('activeSidebar')) {
         </a>
     <?php endif; ?>
 
+    <?php if (Auth::tienePermiso('interbibliotecario.ver')): ?>
+        <a href="<?= Config::url('interbibliotecario') ?>" class="<?= activeSidebar('/interbibliotecario', $route) ?>">
+            <i class="fa-solid fa-building-columns"></i>
+            Interbibliotecario
+        </a>
+    <?php endif; ?>
+
     <?php if (Auth::tienePermiso('reportes.ver')): ?>
         <a href="<?= Config::url('estadisticas') ?>" class="<?= activeSidebar('/estadisticas', $route) ?>">
             <i class="fa-solid fa-chart-column"></i>

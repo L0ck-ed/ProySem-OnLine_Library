@@ -5,6 +5,7 @@ namespace App\Controllers;
 use App\Core\Controller;
 use App\Middleware\Auth;
 use App\Models\Usuario;
+use App\Services\Crypto\PasswordHashService;
 use App\Helpers\Sanitizer;
 use App\Helpers\Validator;
 use App\Helpers\Session;
@@ -163,7 +164,7 @@ class UsuarioController extends Controller
             $usuarioModel->crear([
                 'nombre' => $nombre,
                 'usuario' => $usuario,
-                'password_hash' => password_hash($password, PASSWORD_DEFAULT),
+                'password_hash' => (new PasswordHashService())->transformar($password),
                 'correo' => null,
                 'id_roles' => $idRoles,
             ]);
@@ -291,7 +292,7 @@ class UsuarioController extends Controller
                 'estado' => (int) $estado,
                 'id_roles' => $idRoles,
                 'password_hash' =>
-                    $password !== '' ? password_hash($password, PASSWORD_DEFAULT) : null,
+                    $password !== '' ? (new PasswordHashService())->transformar($password) : null,
             ]);
 
             Session::flash('success', 'Usuario actualizado correctamente.');

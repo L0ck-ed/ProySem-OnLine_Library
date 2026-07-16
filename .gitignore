@@ -28,3 +28,5 @@ desktop.ini
 
 # Archivos temporales de Composer
 composer.phar
+App/Configs/database.local.php
+App/Storage/keys/*.pem

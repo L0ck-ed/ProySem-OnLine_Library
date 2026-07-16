@@ -8,6 +8,7 @@ use App\Helpers\Session;
 use App\Helpers\Validator;
 use App\Models\Usuario;
 use App\Middleware\Auth;
+use App\Services\Crypto\PasswordHashService;
 
 class AuthService
 {
@@ -100,7 +101,9 @@ class AuthService
             $this->redirigirLogin();
         }
 
-        if (!password_verify($password, (string) $datos['password'])) {
+        $passwordService = new PasswordHashService();
+
+        if (!$passwordService->verificar($password, (string) $datos['password'])) {
             $intentos = $this->usuarioModel->aumentarIntentos($idUsuario);
 
             Logger::login(

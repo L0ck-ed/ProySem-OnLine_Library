@@ -99,6 +99,56 @@ class Libro extends Model
         return (int) ($resultado['total'] ?? 0);
     }
 
+
+    public function listarReporteAdmin(string $buscar = ''): array
+    {
+        $temas = $this->subconsultaTemas();
+        $sql = "SELECT
+                    l.id_libro, l.titulo, l.autor, l.isbn, l.editorial,
+                    l.anio_publicacion, l.descripcion, l.costo,
+                    l.existencias_totales, l.existencias_disponibles,
+                    l.ubicacion_fisica, l.estado, l.fecha_creacion,
+                    c.nombre AS categoria,
+                    COALESCE(({$temas}), 'Sin temas') AS temas
+                FROM libros l
+                INNER JOIN categorias c ON c.id_categoria = l.id_categoria
+                WHERE l.titulo LIKE :buscar_titulo
+                   OR l.autor LIKE :buscar_autor
+                   OR COALESCE(l.isbn, '') LIKE :buscar_isbn
+                   OR c.nombre LIKE :buscar_categoria
+                   OR EXISTS (
+                        SELECT 1 FROM libros_temas lt_busqueda
+                        INNER JOIN temas t_busqueda ON t_busqueda.id_tema = lt_busqueda.id_tema
+                        WHERE lt_busqueda.id_libro = l.id_libro
+                          AND t_busqueda.nombre LIKE :buscar_tema
+                   )
+                ORDER BY l.titulo ASC";
+        $termino = '%' . $buscar . '%';
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([
+            ':buscar_titulo' => $termino,
+            ':buscar_autor' => $termino,
+            ':buscar_isbn' => $termino,
+            ':buscar_categoria' => $termino,
+            ':buscar_tema' => $termino,
+        ]);
+        return $stmt->fetchAll();
+    }
+
+    public function datosParaFirma(int $idLibro): array
+    {
+        $stmt = $this->db->prepare(
+            "SELECT id_libro, titulo, autor, isbn, editorial, anio_publicacion,
+                    descripcion, costo, existencias_totales,
+                    imagen_nombre, imagen_ruta, thumbnail_nombre, thumbnail_ruta,
+                    ubicacion_fisica, id_categoria, estado
+             FROM libros WHERE id_libro = :id_libro"
+        );
+        $stmt->execute([':id_libro' => $idLibro]);
+        $fila = $stmt->fetch();
+        return is_array($fila) ? $fila : [];
+    }
+
     public function buscarPorId(int $idLibro): array|false
     {
         $temas = $this->subconsultaTemas();

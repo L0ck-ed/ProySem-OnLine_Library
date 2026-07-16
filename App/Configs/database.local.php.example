@@ -1,0 +1,8 @@
+<?php
+return [
+    'driver' => 'sqlsrv',
+    'sqlsrv_server' => '.\\SQLEXPRESS',
+    'sqlsrv_database' => 'BibliotecaDigitalDB',
+    'sqlsrv_user' => 'sa',
+    'sqlsrv_password' => 'CAMBIA_ESTA_CLAVE',
+];

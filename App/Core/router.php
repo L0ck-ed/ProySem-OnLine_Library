@@ -1,8 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Core;
 
 use App\Config\Config;
+use App\Helpers\Csrf;
 
 class Router
 {
@@ -20,28 +23,27 @@ class Router
 
     public function dispatch(string $url, string $method): void
     {
+        $method = strtoupper($method);
         $path = $this->normalizeRequestPath($url);
 
+        if ($method === 'POST' && !Csrf::validarSolicitud()) {
+            throw new HttpException('Token CSRF inválido o expirado.', 419);
+        }
+
         if (!isset($this->routes[$method][$path])) {
-            http_response_code(404);
-            echo '404 - Página no encontrada';
-            return;
+            throw new HttpException('Ruta no encontrada: ' . $path, 404);
         }
 
         [$controller, $function] = $this->routes[$method][$path];
 
         if (!class_exists($controller)) {
-            http_response_code(500);
-            echo 'Error: controlador no encontrado.';
-            return;
+            throw new HttpException('Controlador no encontrado.', 500);
         }
 
         $obj = new $controller();
 
         if (!method_exists($obj, $function)) {
-            http_response_code(500);
-            echo 'Error: método no encontrado.';
-            return;
+            throw new HttpException('Método de controlador no encontrado.', 500);
         }
 
         $obj->$function();
@@ -51,7 +53,6 @@ class Router
     {
         $path = parse_url($url, PHP_URL_PATH) ?? '/';
         $path = str_replace('\\', '/', $path);
-
         $scriptName = str_replace('\\', '/', $_SERVER['SCRIPT_NAME'] ?? '');
         $scriptDir = rtrim(dirname($scriptName), '/');
         $projectDir = rtrim(dirname($scriptDir), '/');
@@ -63,7 +64,7 @@ class Router
             $projectDir,
         ]));
 
-        usort($bases, fn (string $a, string $b): int => strlen($b) <=> strlen($a));
+        usort($bases, static fn (string $a, string $b): int => strlen($b) <=> strlen($a));
 
         foreach ($bases as $base) {
             if ($base !== '' && ($path === $base || str_starts_with($path, $base . '/'))) {

@@ -19,6 +19,7 @@ $error = Session::getFlash('error');
 $puedeCrear = Auth::tienePermiso('libros.crear');
 $puedeEditar = Auth::tienePermiso('libros.editar');
 $puedeCambiarEstado = Auth::tienePermiso('libros.eliminar');
+$puedeExportar = Auth::tienePermiso('reportes.exportar_excel');
 
 $escapar = static function (mixed $valor): string {
     return htmlspecialchars(
@@ -46,15 +47,26 @@ $escapar = static function (mixed $valor): string {
                     </p>
                 </div>
 
-                <?php if ($puedeCrear): ?>
-                    <a
-                        href="<?= Config::url('libros/crear') ?>"
-                        class="btn btn-primary"
-                    >
-                        <i class="fa-solid fa-plus"></i>
-                        Nuevo libro
-                    </a>
-                <?php endif; ?>
+                <div class="d-flex gap-2 flex-wrap">
+                    <?php if ($puedeExportar): ?>
+                        <a
+                            href="<?= Config::url('libros/excel?buscar=' . urlencode($buscar)) ?>"
+                            class="btn btn-success"
+                        >
+                            <i class="fa-solid fa-file-excel"></i>
+                            Exportar Excel
+                        </a>
+                    <?php endif; ?>
+                    <?php if ($puedeCrear): ?>
+                        <a
+                            href="<?= Config::url('libros/crear') ?>"
+                            class="btn btn-primary"
+                        >
+                            <i class="fa-solid fa-plus"></i>
+                            Nuevo libro
+                        </a>
+                    <?php endif; ?>
+                </div>
             </div>
 
             <?php if ($success): ?>
@@ -113,6 +125,7 @@ $escapar = static function (mixed $valor): string {
                                 <th>Costo</th>
                                 <th>Existencias</th>
                                 <th>Estado</th>
+                                <th>Integridad</th>
                                 <th>Acciones</th>
                             </tr>
                         </thead>
@@ -207,12 +220,24 @@ $escapar = static function (mixed $valor): string {
 
                                     <td>
                                         <?php if ((int) $libro['estado'] === 1): ?>
-                                            <span class="badge bg-success">
-                                                Activo
+                                            <span class="badge bg-success">Activo</span>
+                                        <?php else: ?>
+                                            <span class="badge bg-secondary">Inactivo</span>
+                                        <?php endif; ?>
+                                    </td>
+
+                                    <td>
+                                        <?php if (($libro['integridad'] ?? null) === true): ?>
+                                            <span class="badge bg-success" title="Firma OpenSSL verificada">
+                                                <i class="fa-solid fa-shield-halved"></i> Íntegro
+                                            </span>
+                                        <?php elseif (($libro['integridad'] ?? null) === false): ?>
+                                            <span class="badge bg-danger" title="Los datos no coinciden con la firma digital">
+                                                <i class="fa-solid fa-triangle-exclamation"></i> Alterado
                                             </span>
                                         <?php else: ?>
-                                            <span class="badge bg-secondary">
-                                                Inactivo
+                                            <span class="badge bg-secondary" title="Se firmará al editar el registro">
+                                                Sin firma
                                             </span>
                                         <?php endif; ?>
                                     </td>
@@ -281,7 +306,7 @@ $escapar = static function (mixed $valor): string {
 
                             <?php if (empty($libros)): ?>
                                 <tr>
-                                    <td colspan="8" class="text-center">
+                                    <td colspan="9" class="text-center">
                                         No hay libros registrados.
                                     </td>
                                 </tr>

@@ -2,9 +2,17 @@
 
 declare(strict_types=1);
 
-ini_set('display_errors', '1');
-ini_set('display_startup_errors', '1');
+ini_set('display_errors', '0');
+ini_set('display_startup_errors', '0');
 error_reporting(E_ALL);
+ini_set('log_errors', '1');
+$logDirectory = __DIR__ . '/../App/Storage/logs';
+if (!is_dir($logDirectory)) {
+    @mkdir($logDirectory, 0775, true);
+}
+ini_set('error_log', $logDirectory . '/php-error.log');
+
+require_once __DIR__ . '/../App/Helpers/polyfills.php';
 
 /* Autoload de Composer */
 $composerAutoload = __DIR__ . '/../vendor/autoload.php';
@@ -80,6 +88,23 @@ spl_autoload_register(function (string $class): void {
     }
 });
 
+/* Manejo centralizado de errores y excepciones. */
+\App\Core\ErrorHandler::registrar();
+
+/* Encabezados defensivos recomendados por OWASP. */
+if (!headers_sent()) {
+    header('X-Content-Type-Options: nosniff');
+    header('X-Frame-Options: SAMEORIGIN');
+    header('Referrer-Policy: strict-origin-when-cross-origin');
+    header('Permissions-Policy: camera=(), microphone=(), geolocation=()');
+
+    $esHttps = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+        || (($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https');
+    if ($esHttps) {
+        header('Strict-Transport-Security: max-age=31536000; includeSubDomains');
+    }
+}
+
 /* ==================================================
    IMPORTACIÓN DE CLASES
    ================================================== */
@@ -97,6 +122,7 @@ use App\Controllers\UsuarioRegularAuthController;
 use App\Controllers\Admin\CategoriaController;
 use App\Controllers\Admin\EstadisticaController;
 use App\Controllers\Admin\EstudianteController;
+use App\Controllers\Admin\InterbibliotecarioController;
 use App\Controllers\Admin\EstructuraAcademicaController;
 use App\Controllers\Admin\LibroController;
 use App\Controllers\Admin\ProfesorController;
@@ -116,6 +142,7 @@ $router = new Router();
 
 $router->get('/', [AccesoController::class, 'index']);
 $router->get('/publico', [PublicoController::class, 'index']);
+$router->post('/publico/contacto', [PublicoController::class, 'contactar']);
 
 /* ==================================================
    AUTENTICACIÓN ADMINISTRATIVA
@@ -123,7 +150,7 @@ $router->get('/publico', [PublicoController::class, 'index']);
 
 $router->get('/admin/login', [LoginController::class, 'index']);
 $router->post('/login', [LoginController::class, 'autenticar']);
-$router->get('/logout', [LoginController::class, 'logout']);
+$router->post('/logout', [LoginController::class, 'logout']);
 
 /* ==================================================
    DASHBOARD ADMINISTRATIVO
@@ -228,6 +255,7 @@ $router->post('/libros/guardar', [LibroController::class, 'guardar']);
 $router->get('/libros/editar', [LibroController::class, 'editar']);
 $router->post('/libros/actualizar', [LibroController::class, 'actualizar']);
 $router->post('/libros/cambiar-estado', [LibroController::class, 'cambiarEstado']);
+$router->get('/libros/excel', [LibroController::class, 'exportarExcel']);
 
 /* ==================================================
    RESERVAS Y PRÉSTAMOS
@@ -250,12 +278,23 @@ $router->get('/solicitudes/gestionar', [SolicitudController::class, 'gestionar']
 $router->post('/solicitudes/actualizar', [SolicitudController::class, 'actualizar']);
 
 /* ==================================================
+   PRÉSTAMO INTERBIBLIOTECARIO ADMINISTRATIVO
+   ================================================== */
+$router->get('/interbibliotecario', [InterbibliotecarioController::class, 'index']);
+$router->post('/interbibliotecario/institucion/guardar', [InterbibliotecarioController::class, 'guardarInstitucion']);
+$router->post('/interbibliotecario/institucion/estado', [InterbibliotecarioController::class, 'cambiarEstadoInstitucion']);
+$router->post('/interbibliotecario/libro/guardar', [InterbibliotecarioController::class, 'guardarLibro']);
+$router->post('/interbibliotecario/libro/disponibilidad', [InterbibliotecarioController::class, 'cambiarDisponibilidadLibro']);
+$router->post('/interbibliotecario/solicitud/actualizar', [InterbibliotecarioController::class, 'actualizarSolicitud']);
+
+
+/* ==================================================
    AUTENTICACIÓN DE USUARIOS REGULARES
    ================================================== */
 
 $router->get('/portal/login', [UsuarioRegularAuthController::class, 'index']);
 $router->post('/portal/login', [UsuarioRegularAuthController::class, 'autenticar']);
-$router->get('/portal/logout', [UsuarioRegularAuthController::class, 'logout']);
+$router->post('/portal/logout', [UsuarioRegularAuthController::class, 'logout']);
 
 /* ==================================================
    PORTAL REGULAR
@@ -270,6 +309,11 @@ $router->post('/portal/prestamos/devolver', [PortalController::class, 'devolver'
 $router->get('/portal/solicitudes', [PortalController::class, 'solicitudes']);
 $router->post('/portal/solicitudes', [PortalController::class, 'guardarSolicitud']);
 $router->get('/portal/perfil', [PortalController::class, 'perfil']);
+
+$router->get('/portal/interbibliotecario', [PortalController::class, 'interbibliotecario']);
+$router->post('/portal/interbibliotecario/solicitar', [PortalController::class, 'solicitarInterbibliotecario']);
+$router->post('/portal/interbibliotecario/cancelar', [PortalController::class, 'cancelarInterbibliotecario']);
+
 
 /* ==================================================
    EJECUCIÓN DEL ROUTER

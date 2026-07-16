@@ -7,6 +7,7 @@ use App\Helpers\Session;
 use App\Models\Usuario;
 use App\Models\UsuarioRegular;
 use App\Middleware\Auth;
+use App\Services\Crypto\PasswordHashService;
 
 class UsuarioRegularAuthService
 {
@@ -76,7 +77,9 @@ class UsuarioRegularAuthService
             }
         }
 
-        if (!password_verify($clave, (string) $usuario['password_hash'])) {
+        $passwordService = new PasswordHashService();
+
+        if (!$passwordService->verificar($clave, (string) $usuario['password_hash'])) {
             $intentos = $modeloRegular->registrarIntentoFallido($idUsuario);
 
             Logger::login(

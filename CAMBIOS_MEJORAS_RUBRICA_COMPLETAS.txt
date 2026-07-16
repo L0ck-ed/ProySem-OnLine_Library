@@ -1,0 +1,76 @@
+MEJORAS COMPLETAS SEGÚN LA RÚBRICA
+==================================
+
+Esta versión parte del ZIP entregado por el estudiante y agrega los puntos que
+estaban incompletos en la revisión de la rúbrica.
+
+1. SEGURIDAD Y CONTROL DE ERRORES
+--------------------------------
+- Protección CSRF automática para todos los formularios POST.
+- Sesiones con HttpOnly, SameSite=Lax y Secure cuando se usa HTTPS.
+- Encabezados de seguridad para reducir clickjacking, MIME sniffing y fugas de referencia.
+- Manejador global de errores y excepciones con páginas genéricas para el usuario.
+- Registro de errores en App/Storage/logs/php-error.log y, cuando sea posible,
+  en la tabla logs_errores.
+- Las credenciales ya no están escritas dentro de la clase de conexión. Se leen
+  desde variables de entorno o App/Configs/database.local.php.
+
+2. CONTRATOS CRIPTOGRÁFICOS
+---------------------------
+- Contrato común: App/Core/contracts/ServicioCriptograficoInterface.php
+- Implementación para hashing de contraseñas.
+- Implementación de firma digital RSA-SHA256 con OpenSSL.
+- Repositorio y servicio para guardar/verificar firmas en firmas_registros.
+- Los libros se firman al crearse, editarse o cambiar de estado.
+- La pantalla de libros muestra: Íntegro, Alterado o Sin firma.
+- Las llaves se generan automáticamente en App/Storage/keys la primera vez.
+
+3. LIBROS E IMÁGENES
+--------------------
+- Exportación a Excel del inventario conservando la búsqueda aplicada.
+- El reporte incluye categoría, autor, costo, existencias, disponibilidad e integridad.
+- Servicio reutilizable para validar, redimensionar y crear thumbnails.
+- Bloqueo de ejecución de scripts dentro de la carpeta de imágenes.
+
+4. PRÉSTAMO INTERBIBLIOTECARIO
+------------------------------
+- CRUD de instituciones externas.
+- CRUD de catálogo externo.
+- Solicitud y cancelación por estudiantes/profesores.
+- Gestión administrativa del estado, fechas y observaciones.
+- Permisos separados para ver, solicitar y administrar.
+
+5. PÁGINA PÚBLICA
+-----------------
+- Importancia de las bibliotecas digitales.
+- Stack tecnológico del sistema.
+- Servicios disponibles.
+- Formulario Contáctenos funcional con validación y limitación básica de envíos.
+
+6. BASE DE DATOS: PASO OBLIGATORIO
+----------------------------------
+Ejecutar UNA VEZ en SQL Server Management Studio:
+
+    DataBase/actualizacion_mejoras_rubrica.sql
+
+El script es idempotente: puede ejecutarse nuevamente sin duplicar tablas ni permisos.
+Si todavía no se ejecutó la estructura académica, ejecutar antes:
+
+    DataBase/actualizacion_estructura_academica.sql
+
+7. EXTENSIONES PHP REQUERIDAS
+-----------------------------
+- pdo_sqlsrv y sqlsrv (o pdo_mysql si se usa MySQL)
+- gd
+- openssl
+- fileinfo
+
+8. VALIDACIÓN REALIZADA
+-----------------------
+- Sintaxis de todos los archivos PHP.
+- Sintaxis de todos los archivos JavaScript.
+- Detección de rutas duplicadas.
+- Prueba aislada de hashing y firma/verificación OpenSSL.
+
+La migración no puede ejecutarse desde este paquete sobre la computadora local;
+debe realizarse en el servidor SQL Server del usuario.

@@ -1,52 +1,67 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Controllers;
 
+use App\Config\Config;
 use App\Core\Controller;
+use App\Helpers\Session;
+use App\Models\MensajeContacto;
 
 class PublicoController extends Controller
 {
     public function index(): void
     {
-        $bondades = [
-            [
-                'icono' => 'fa-solid fa-magnifying-glass',
-                'titulo' => 'Catálogo en línea',
-                'texto' => 'Busca libros por título, autor o categoría y consulta la disponibilidad en tiempo real, sin tener que ir físicamente a la biblioteca.',
-            ],
-            [
-                'icono' => 'fa-solid fa-calendar-check',
-                'titulo' => 'Reservas simplificadas',
-                'texto' => 'Reserva el libro que necesitas y consulta tus préstamos activos y tu historial desde tu propio perfil.',
-            ],
-            [
-                'icono' => 'fa-solid fa-circle-plus',
-                'titulo' => 'Solicitud de libros',
-                'texto' => '¿No está en el catálogo? Solicítalo por área de interés y la administración evaluará agregarlo.',
-            ],
-        ];
-
-        $fortalezas = [
-            ['icono' => 'fa-solid fa-shield-halved', 'texto' => 'Acceso seguro con control de intentos de inicio de sesión'],
-            ['icono' => 'fa-solid fa-layer-group', 'texto' => 'Arquitectura MVC, mantenible y organizada por capas'],
-            ['icono' => 'fa-solid fa-tags', 'texto' => 'Categorías claras: Química, Sistemas, Lógica, Matemática y Estadística'],
-            ['icono' => 'fa-solid fa-chart-line', 'texto' => 'Estadísticas de los libros más solicitados por período'],
-            ['icono' => 'fa-solid fa-file-excel', 'texto' => 'Reportes exportables en Excel para administración'],
-            ['icono' => 'fa-solid fa-mobile-screen', 'texto' => 'Interfaz responsive, usable desde celular o computadora'],
-        ];
-
-        $desarrolladores = [
-            ['nombre' => 'Anthony Castillo',   'rol' => 'Desarrollador Full Stack'],
-            ['nombre' => 'Rubén Domínguez',    'rol' => 'Desarrollador Full Stack'],
-            ['nombre' => 'Eduardo González',   'rol' => 'Desarrollador Full Stack'],
-            ['nombre' => 'Nicole Rosales',     'rol' => 'Desarrolladora Full Stack'],
-            ['nombre' => 'Guillermo Siuki',    'rol' => 'Desarrollador Full Stack'],
-        ];
-
         $this->view('Publico/index', [
-            'bondades' => $bondades,
-            'fortalezas' => $fortalezas,
-            'desarrolladores' => $desarrolladores,
+            'mensajeExito' => Session::getFlash('contacto_exito'),
+            'mensajeError' => Session::getFlash('contacto_error'),
+            'datosAnteriores' => Session::getFlash('contacto_old') ?? [],
         ]);
+    }
+
+    public function contactar(): void
+    {
+        $datos = [
+            'nombre' => trim((string) ($_POST['nombre'] ?? '')),
+            'correo' => trim((string) ($_POST['correo'] ?? '')),
+            'asunto' => trim((string) ($_POST['asunto'] ?? '')),
+            'mensaje' => trim((string) ($_POST['mensaje'] ?? '')),
+        ];
+
+        $ultimoEnvio = (int) (Session::get('contacto_ultimo_envio') ?? 0);
+        if ($ultimoEnvio > 0 && time() - $ultimoEnvio < 20) {
+            $this->volverContacto('Espera unos segundos antes de enviar otro mensaje.', $datos);
+        }
+
+        if (
+            $datos['nombre'] === '' || mb_strlen($datos['nombre']) > 150 ||
+            !filter_var($datos['correo'], FILTER_VALIDATE_EMAIL) ||
+            $datos['asunto'] === '' || mb_strlen($datos['asunto']) > 200 ||
+            mb_strlen($datos['mensaje']) < 10 || mb_strlen($datos['mensaje']) > 2000
+        ) {
+            $this->volverContacto('Completa correctamente todos los campos. El mensaje debe tener entre 10 y 2000 caracteres.', $datos);
+        }
+
+        try {
+            (new MensajeContacto())->crear($datos);
+            Session::set('contacto_ultimo_envio', time());
+            Session::flash('contacto_exito', 'Tu mensaje fue enviado correctamente.');
+        } catch (\Throwable $e) {
+            error_log('Contacto público: ' . $e->getMessage());
+            Session::flash('contacto_error', 'No se pudo enviar el mensaje en este momento.');
+            Session::flash('contacto_old', $datos);
+        }
+
+        header('Location: ' . Config::url('publico') . '#contacto');
+        exit();
+    }
+
+    private function volverContacto(string $mensaje, array $datos): never
+    {
+        Session::flash('contacto_error', $mensaje);
+        Session::flash('contacto_old', $datos);
+        header('Location: ' . Config::url('publico') . '#contacto');
+        exit();
     }
 }

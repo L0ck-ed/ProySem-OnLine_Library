@@ -4,12 +4,6 @@ namespace App\Config;
 
 class Config
 {
-    public const HOST = 'localhost';
-    public const DB = 'myprojectbiblioteca_v2';
-    public const USER = 'root';
-    public const PASSWORD = '';
-    public const CHARSET = 'utf8mb4';
-
     // Se dejan por compatibilidad, pero para rutas se usan los métodos de abajo.
     public const BASE_URL = '/ProySem-OnLine_Library';
     public const PUBLIC_URL = self::BASE_URL . '/Public';

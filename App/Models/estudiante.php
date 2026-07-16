@@ -6,6 +6,7 @@ use App\Core\Sql;
 use App\Core\Model;
 use App\Core\Contracts\AutenticableRepositorioInterface;
 use PDO;
+use App\Services\Crypto\PasswordHashService;
 
 class Estudiante extends Model implements AutenticableRepositorioInterface
 {
@@ -124,7 +125,7 @@ class Estudiante extends Model implements AutenticableRepositorioInterface
         $stmt = $this->db->prepare($sql);
 
         return $stmt->execute([
-            ':pin_hash' => password_hash($pinTextoPlano, PASSWORD_DEFAULT),
+            ':pin_hash' => (new PasswordHashService())->transformar($pinTextoPlano),
             ':id' => $id,
         ]);
     }

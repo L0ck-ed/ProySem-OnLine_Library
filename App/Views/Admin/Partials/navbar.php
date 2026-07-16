@@ -20,10 +20,12 @@ $nombreSesion = Session::get('nombre') ?? 'Administrador';
                 <?= $nombreSesion ?>
             </span>
 
-            <a href="<?= Config::baseUrl() ?>/logout" class="btn btn-danger btn-sm">
-                <i class="fa-solid fa-right-from-bracket"></i>
-                Cerrar sesión
-            </a>
+            <form method="POST" action="<?= Config::url('logout') ?>" class="m-0">
+                <button type="submit" class="btn btn-danger btn-sm">
+                    <i class="fa-solid fa-right-from-bracket"></i>
+                    Cerrar sesión
+                </button>
+            </form>
         </div>
     </div>
 </nav>

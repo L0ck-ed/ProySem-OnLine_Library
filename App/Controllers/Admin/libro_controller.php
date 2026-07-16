@@ -9,10 +9,13 @@ use App\Middleware\Auth;
 use App\Models\Categoria;
 use App\Models\Libro;
 use App\Models\Tema;
+use App\Services\Crypto\RegistroFirmaService;
+use App\Services\Images\LibroImageService;
 
 class LibroController extends Controller
 {
     private const MAX_IMAGEN_BYTES = 5 * 1024 * 1024;
+    private ?RegistroFirmaService $firmaService = null;
 
     public function index(): void
     {
@@ -31,6 +34,14 @@ class LibroController extends Controller
             $porPagina,
             $offset
         );
+
+        foreach ($libros as &$libro) {
+            $libro['integridad'] = $this->verificarIntegridadLibro(
+                $libroModel,
+                (int) $libro['id_libro']
+            );
+        }
+        unset($libro);
 
         $totalRegistros = $libroModel->contarAdmin($buscar);
         $totalPaginas = max(
@@ -102,10 +113,11 @@ class LibroController extends Controller
         try {
             $imagen = $this->procesarImagen($_FILES['imagen'] ?? null);
 
-            $libroModel->crear(
+            $idLibro = $libroModel->crear(
                 array_merge($datos, $this->datosImagen($imagen)),
                 $idsTemas
             );
+            $this->firmarLibroSeguro($libroModel, $idLibro);
 
             Session::flash(
                 'success',
@@ -270,6 +282,7 @@ class LibroController extends Controller
                 array_merge($datos, $datosImagen),
                 $idsTemas
             );
+            $this->firmarLibroSeguro($libroModel, (int) $datos['id_libro']);
 
             if ($imagenNueva !== null) {
                 $this->eliminarArchivosImagen([
@@ -305,6 +318,59 @@ class LibroController extends Controller
                 $rutaEditar
             );
         }
+    }
+
+
+    public function exportarExcel(): void
+    {
+        Auth::check();
+        Auth::exigirPermiso('reportes.exportar_excel');
+
+        $buscar = trim((string) ($_GET['buscar'] ?? ''));
+        $libroModel = new Libro();
+        $libros = $libroModel->listarReporteAdmin($buscar);
+
+        while (ob_get_level() > 0) {
+            ob_end_clean();
+        }
+
+        $nombre = 'inventario_libros_' . date('Y-m-d_H-i-s') . '.xls';
+        header('Content-Type: application/vnd.ms-excel; charset=UTF-8');
+        header('Content-Disposition: attachment; filename="' . $nombre . '"');
+        header('Cache-Control: max-age=0');
+
+        echo "\xEF\xBB\xBF";
+        echo '<html><head><meta charset="UTF-8"></head><body>';
+        echo '<h2>Inventario de libros</h2>';
+        echo '<p>Filtro aplicado: ' . htmlspecialchars($buscar !== '' ? $buscar : 'Todos', ENT_QUOTES, 'UTF-8') . '</p>';
+        echo '<table border="1"><thead><tr>';
+        foreach (['ID','Título','Autor','ISBN','Editorial','Año','Categoría','Temas','Costo','Totales','Disponibles','Disponibilidad','Ubicación','Estado','Integridad'] as $titulo) {
+            echo '<th>' . htmlspecialchars($titulo, ENT_QUOTES, 'UTF-8') . '</th>';
+        }
+        echo '</tr></thead><tbody>';
+        foreach ($libros as $libro) {
+            $fila = [
+                $libro['id_libro'] ?? '', $libro['titulo'] ?? '', $libro['autor'] ?? '',
+                $libro['isbn'] ?? '', $libro['editorial'] ?? '', $libro['anio_publicacion'] ?? '',
+                $libro['categoria'] ?? '', $libro['temas'] ?? '',
+                number_format((float) ($libro['costo'] ?? 0), 2, '.', ''),
+                $libro['existencias_totales'] ?? 0, $libro['existencias_disponibles'] ?? 0,
+                (int) ($libro['existencias_disponibles'] ?? 0) > 0 ? 'Disponible' : 'No disponible',
+                $libro['ubicacion_fisica'] ?? '', (int) ($libro['estado'] ?? 0) === 1 ? 'Activo' : 'Inactivo',
+                match ($this->verificarIntegridadLibro($libroModel, (int) ($libro['id_libro'] ?? 0))) {
+                    true => 'Íntegro',
+                    false => 'Alterado',
+                    default => 'Sin firma',
+                },
+            ];
+            echo '<tr>';
+            foreach ($fila as $valor) {
+                echo '<td>' . htmlspecialchars((string) $valor, ENT_QUOTES, 'UTF-8') . '</td>';
+            }
+            echo '</tr>';
+        }
+        echo '</tbody></table></body></html>';
+        exit();
     }
 
     public function cambiarEstado(): void
@@ -352,6 +418,7 @@ class LibroController extends Controller
                 (int) $idLibro,
                 $nuevoEstado
             );
+            $this->firmarLibroSeguro($libroModel, (int) $idLibro);
 
             Session::flash(
                 'success',
@@ -373,6 +440,42 @@ class LibroController extends Controller
 
         header('Location: ' . Config::url('libros'));
         exit();
+    }
+
+
+    private function firmarLibroSeguro(Libro $modelo, int $idLibro): void
+    {
+        try {
+            $datos = $modelo->datosParaFirma($idLibro);
+            if ($datos !== []) {
+                $this->firmaService()->firmar(
+                    'libros',
+                    $idLibro,
+                    $datos,
+                    (int) Session::get('id_usuario') ?: null,
+                );
+            }
+        } catch (\Throwable $e) {
+            error_log('No se pudo firmar el libro: ' . $e->getMessage());
+        }
+    }
+
+    private function verificarIntegridadLibro(Libro $modelo, int $idLibro): ?bool
+    {
+        try {
+            $datos = $modelo->datosParaFirma($idLibro);
+            return $datos === []
+                ? null
+                : $this->firmaService()->verificar('libros', $idLibro, $datos);
+        } catch (\Throwable $e) {
+            error_log('No se pudo verificar la firma del libro: ' . $e->getMessage());
+            return null;
+        }
+    }
+
+    private function firmaService(): RegistroFirmaService
+    {
+        return $this->firmaService ??= new RegistroFirmaService();
     }
 
     private function leerDatosFormulario(): array
@@ -530,198 +633,7 @@ class LibroController extends Controller
 
     private function procesarImagen(?array $archivo): ?array
     {
-        if (
-            $archivo === null ||
-            ($archivo['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_NO_FILE
-        ) {
-            return null;
-        }
-
-        if (($archivo['error'] ?? UPLOAD_ERR_OK) !== UPLOAD_ERR_OK) {
-            throw new \RuntimeException(
-                'Ocurrió un error al subir la imagen.'
-            );
-        }
-
-        if ((int) ($archivo['size'] ?? 0) > self::MAX_IMAGEN_BYTES) {
-            throw new \RuntimeException(
-                'La imagen no puede superar los 5 MB.'
-            );
-        }
-
-        if (!extension_loaded('gd')) {
-            throw new \RuntimeException(
-                'La extensión GD de PHP debe estar habilitada para procesar imágenes.'
-            );
-        }
-
-        $temporal = (string) ($archivo['tmp_name'] ?? '');
-
-        if (!is_uploaded_file($temporal)) {
-            throw new \RuntimeException(
-                'El archivo de imagen recibido no es válido.'
-            );
-        }
-
-        $finfo = new \finfo(FILEINFO_MIME_TYPE);
-        $mime = $finfo->file($temporal);
-
-        $permitidos = [
-            'image/jpeg',
-            'image/png',
-            'image/webp',
-        ];
-
-        if (!in_array($mime, $permitidos, true)) {
-            throw new \RuntimeException(
-                'La imagen debe ser JPG, PNG o WEBP.'
-            );
-        }
-
-        $medidas = getimagesize($temporal);
-
-        if ($medidas === false) {
-            throw new \RuntimeException(
-                'No se pudo leer la imagen subida.'
-            );
-        }
-
-        [$ancho, $alto] = $medidas;
-        $origen = $this->crearRecursoImagen($temporal, $mime);
-
-        if ($origen === false) {
-            throw new \RuntimeException(
-                'No se pudo procesar la imagen subida.'
-            );
-        }
-
-        $base = dirname(__DIR__, 3) .
-            '/Public/Assets/Uploads/Libros';
-
-        $dirOriginal = $base . '/Originales';
-        $dirMiniatura = $base . '/Miniaturas';
-
-        foreach ([$dirOriginal, $dirMiniatura] as $directorio) {
-            if (
-                !is_dir($directorio) &&
-                !mkdir($directorio, 0775, true) &&
-                !is_dir($directorio)
-            ) {
-                imagedestroy($origen);
-
-                throw new \RuntimeException(
-                    'No se pudo crear el directorio de imágenes.'
-                );
-            }
-        }
-
-        $token = bin2hex(random_bytes(16));
-        $nombreOriginal = 'libro_' . $token . '.jpg';
-        $nombreMiniatura = 'thumb_' . $token . '.jpg';
-
-        $rutaOriginalFisica = $dirOriginal . '/' . $nombreOriginal;
-        $rutaMiniaturaFisica = $dirMiniatura . '/' . $nombreMiniatura;
-
-        try {
-            $this->guardarRedimensionada(
-                $origen,
-                $ancho,
-                $alto,
-                $rutaOriginalFisica,
-                1200,
-                1600
-            );
-
-            $this->guardarRedimensionada(
-                $origen,
-                $ancho,
-                $alto,
-                $rutaMiniaturaFisica,
-                240,
-                320
-            );
-        } finally {
-            imagedestroy($origen);
-        }
-
-        return [
-            'imagen_nombre' => $nombreOriginal,
-            'imagen_ruta' =>
-                'Uploads/Libros/Originales/' . $nombreOriginal,
-            'thumbnail_nombre' => $nombreMiniatura,
-            'thumbnail_ruta' =>
-                'Uploads/Libros/Miniaturas/' . $nombreMiniatura,
-        ];
-    }
-
-    private function crearRecursoImagen(
-        string $ruta,
-        string $mime
-    ): \GdImage|false {
-        return match ($mime) {
-            'image/jpeg' => imagecreatefromjpeg($ruta),
-            'image/png' => imagecreatefrompng($ruta),
-            'image/webp' => imagecreatefromwebp($ruta),
-            default => false,
-        };
-    }
-
-    private function guardarRedimensionada(
-        \GdImage $origen,
-        int $anchoOriginal,
-        int $altoOriginal,
-        string $destino,
-        int $anchoMaximo,
-        int $altoMaximo
-    ): void {
-        $escala = min(
-            $anchoMaximo / $anchoOriginal,
-            $altoMaximo / $altoOriginal,
-            1
-        );
-
-        $anchoNuevo = max(
-            1,
-            (int) round($anchoOriginal * $escala)
-        );
-
-        $altoNuevo = max(
-            1,
-            (int) round($altoOriginal * $escala)
-        );
-
-        $lienzo = imagecreatetruecolor($anchoNuevo, $altoNuevo);
-
-        if ($lienzo === false) {
-            throw new \RuntimeException(
-                'No se pudo crear la imagen redimensionada.'
-            );
-        }
-
-        $blanco = imagecolorallocate($lienzo, 255, 255, 255);
-        imagefill($lienzo, 0, 0, $blanco);
-
-        imagecopyresampled(
-            $lienzo,
-            $origen,
-            0,
-            0,
-            0,
-            0,
-            $anchoNuevo,
-            $altoNuevo,
-            $anchoOriginal,
-            $altoOriginal
-        );
-
-        $guardada = imagejpeg($lienzo, $destino, 88);
-        imagedestroy($lienzo);
-
-        if (!$guardada) {
-            throw new \RuntimeException(
-                'No se pudo guardar la imagen redimensionada.'
-            );
-        }
+        return (new LibroImageService())->procesar($archivo);
     }
 
     private function datosImagen(?array $imagen): array
@@ -736,22 +648,7 @@ class LibroController extends Controller
 
     private function eliminarArchivosImagen(array $imagen): void
     {
-        $base = dirname(__DIR__, 3) . '/Public/Assets/';
-
-        foreach (['imagen_ruta', 'thumbnail_ruta'] as $campo) {
-            $ruta = $imagen[$campo] ?? null;
-
-            if (!is_string($ruta) || $ruta === '') {
-                continue;
-            }
-
-            $rutaSegura = str_replace(['..', '\\'], ['', '/'], $ruta);
-            $archivo = $base . ltrim($rutaSegura, '/');
-
-            if (is_file($archivo)) {
-                @unlink($archivo);
-            }
-        }
+        (new LibroImageService())->eliminar($imagen);
     }
 
     private function regresarConError(

@@ -153,11 +153,19 @@ C:/xampp/htdocs/ProySem-OnLine_Library
 DataBase/biblioteca.sql
 ```
 
-3. Revisar la configuración de conexión en:
+3. Configurar la conexión local copiando el ejemplo:
 
 ```text
-App/configs/database_config.php
+App/Configs/database.local.php.example
 ```
+
+como:
+
+```text
+App/Configs/database.local.php
+```
+
+También se pueden utilizar las variables de entorno `DB_DRIVER`, `DB_SERVER`, `DB_DATABASE`, `DB_USERNAME` y `DB_PASSWORD`.
 
 4. Ejecutar el proyecto desde el navegador:
 
@@ -229,6 +237,31 @@ Después de ejecutarlo:
 6. Abre **Estadísticas** para analizar uso confirmado o demanda solicitada por facultad, carrera, departamento e intervalo.
 
 Los registros relacionados no se eliminan de forma definitiva; deben desactivarse para conservar el historial académico y de préstamos.
+
+---
+
+## Actualización: mejoras completas de la rúbrica
+
+Para una base de datos que ya existe, ejecuta una sola vez:
+
+```text
+DataBase/actualizacion_mejoras_rubrica.sql
+```
+
+Esta actualización agrega o garantiza:
+
+- Contrato criptográfico común para hashing de contraseñas y firma digital RSA-SHA256.
+- Firma y verificación de integridad de los registros de libros.
+- Exportación a Excel del inventario respetando la búsqueda aplicada.
+- Servicio reutilizable para imágenes originales y thumbnails.
+- Módulo de préstamo interbibliotecario para administradores y usuarios regulares.
+- Página pública con Stack, importancia de las bibliotecas digitales y Contáctenos.
+- Protección CSRF en todos los formularios POST.
+- Manejo global de errores, registro de incidentes y encabezados de seguridad.
+
+Extensiones de PHP requeridas: `pdo_sqlsrv` y `sqlsrv` para SQL Server, `gd`, `openssl` y `fileinfo`.
+
+Las llaves de firma se generan automáticamente en `App/Storage/keys` durante la primera firma. No compartas la llave privada ni la subas a un repositorio público.
 
 ---
 

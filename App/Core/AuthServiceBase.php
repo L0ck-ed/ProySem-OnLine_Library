@@ -8,6 +8,7 @@ use App\Helpers\Sanitizer;
 use App\Helpers\Validator;
 use App\Helpers\Logger;
 use App\Config\Config;
+use App\Services\Crypto\PasswordHashService;
 
 abstract class AuthServiceBase
 {
@@ -58,7 +59,9 @@ abstract class AuthServiceBase
 
         $hash = $fila[$this->campoClave()] ?? '';
 
-        if (!is_string($hash) || $hash === '' || !password_verify($clave, $hash)) {
+        $passwordService = new PasswordHashService();
+
+        if (!is_string($hash) || $hash === '' || !$passwordService->verificar($clave, $hash)) {
             $this->repositorio->aumentarIntentos($id);
             $intentos = (int) ($fila['intentos_fallidos'] ?? 0) + 1;
 

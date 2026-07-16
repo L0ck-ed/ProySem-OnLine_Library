@@ -10,6 +10,7 @@ use App\Helpers\Validator;
 use App\Middleware\UsuarioRegularAuth;
 use App\Models\Categoria;
 use App\Models\Libro;
+use App\Models\PrestamoInterbibliotecario;
 use App\Models\ReservaRegular;
 use App\Models\SolicitudRegular;
 use App\Models\Usuario;
@@ -332,6 +333,84 @@ class PortalController extends Controller
         $this->redirigirASolicitudes();
     }
 
+
+    public function interbibliotecario(): void
+    {
+        $this->exigirPermisoPortal(
+            'interbibliotecario.ver',
+            'No tienes permiso para consultar el catálogo interbibliotecario.',
+        );
+
+        $buscar = trim((string) ($_GET['buscar'] ?? ''));
+        $idUsuario = $this->obtenerIdUsuarioSesion();
+        $modelo = new PrestamoInterbibliotecario();
+
+        $this->view(
+            'Client/Interbibliotecario/index',
+            array_merge(
+                $this->datosSesion(),
+                [
+                    'catalogo' => $modelo->listarCatalogo($buscar, true),
+                    'misSolicitudes' => $modelo->listarPorUsuario($idUsuario),
+                    'buscar' => $buscar,
+                    'exitoInterbibliotecario' => Session::getFlash('exito_interbibliotecario'),
+                    'errorInterbibliotecario' => Session::getFlash('error_interbibliotecario'),
+                ],
+            ),
+        );
+    }
+
+    public function solicitarInterbibliotecario(): void
+    {
+        $this->exigirPermisoPortal(
+            'interbibliotecario.crear',
+            'No tienes permiso para solicitar préstamos interbibliotecarios.',
+        );
+
+        $idLibro = filter_input(INPUT_POST, 'id_libro_externo', FILTER_VALIDATE_INT);
+        $observacion = trim((string) ($_POST['observacion'] ?? ''));
+
+        if (!$idLibro || mb_strlen($observacion) > 1000) {
+            Session::flash('error_interbibliotecario', 'Los datos de la solicitud no son válidos.');
+            $this->redirigirAInterbibliotecario();
+        }
+
+        try {
+            $resultado = (new PrestamoInterbibliotecario())->solicitar(
+                $this->obtenerIdUsuarioSesion(),
+                (int) $idLibro,
+                $observacion,
+            );
+            Session::flash(
+                $resultado['ok'] ? 'exito_interbibliotecario' : 'error_interbibliotecario',
+                $resultado['mensaje'],
+            );
+        } catch (\Throwable $e) {
+            error_log('Solicitud interbibliotecaria: ' . $e->getMessage());
+            Session::flash('error_interbibliotecario', 'No se pudo enviar la solicitud.');
+        }
+
+        $this->redirigirAInterbibliotecario();
+    }
+
+    public function cancelarInterbibliotecario(): void
+    {
+        $this->exigirPermisoPortal('interbibliotecario.crear');
+        $idSolicitud = filter_input(INPUT_POST, 'id_solicitud', FILTER_VALIDATE_INT);
+        $ok = $idSolicitud
+            ? (new PrestamoInterbibliotecario())->cancelarPorUsuario(
+                (int) $idSolicitud,
+                $this->obtenerIdUsuarioSesion(),
+            )
+            : false;
+
+        Session::flash(
+            $ok ? 'exito_interbibliotecario' : 'error_interbibliotecario',
+            $ok ? 'Solicitud cancelada correctamente.' : 'La solicitud ya no puede cancelarse.',
+        );
+        $this->redirigirAInterbibliotecario();
+    }
+
     public function perfil(): void
     {
         $idUsuario = $this->obtenerIdUsuarioSesion();
@@ -383,6 +462,7 @@ class PortalController extends Controller
             'perfilRegular' => $perfil,
             'permisosPortal' => $this->obtenerPermisosActuales(),
             'puedeVerLibros' => $this->tienePermisoPortal('libros.ver'),
+            'puedeInterbibliotecario' => $this->tienePermisoPortal('interbibliotecario.ver'),
             'errorPermiso' => Session::getFlash('error_permiso'),
         ];
     }
@@ -466,6 +546,13 @@ class PortalController extends Controller
             $idLibro,
         );
 
+        exit();
+    }
+
+
+    private function redirigirAInterbibliotecario(): never
+    {
+        header('Location: ' . Config::url('portal/interbibliotecario'));
         exit();
     }
 
